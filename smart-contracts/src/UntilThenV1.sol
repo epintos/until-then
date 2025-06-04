@@ -94,6 +94,10 @@ contract UntilThenV1 is Ownable {
             revert UntilThenV1__ReleaseTimestampCannotBeInThePast();
         }
 
+        if (msg.value == 0) {
+            revert UntilThenV1__InvalidGiftFee();
+        }
+
         bool yield;
         if (
             yieldStrategy != AvailableYieldStrategies.AAVE && yieldStrategy != AvailableYieldStrategies.COMPOUND
@@ -137,10 +141,6 @@ contract UntilThenV1 is Ownable {
 
     // PRIVATE & INTERNAL FUNCTIONS
     function _deductFee(uint256 amount, bool isContent, bool isYield) private view returns (uint256) {
-        if (amount == 0) {
-            revert UntilThenV1__InvalidGiftFee();
-        }
-
         // Deduct content fee if content is present
         if (isContent) {
             if (amount < contentGiftFee) {
@@ -160,4 +160,19 @@ contract UntilThenV1 is Ownable {
     }
 
     // PUBLIC & EXTERNAL VIEW FUNCTIONS
+    function getTotalGifts() external view returns (uint256) {
+        return totalGifts;
+    }
+
+    function getGiftById(uint256 id) external view returns (Gift memory) {
+        return gifts[id];
+    }
+
+    function getSenderGifts(address sender) external view returns (Gift[] memory) {
+        return senderGifts[sender];
+    }
+
+    function getReceiverGifts(address receiver) external view returns (Gift[] memory) {
+        return receiverGifts[receiver];
+    }
 }
