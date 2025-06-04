@@ -3,10 +3,12 @@
 pragma solidity ^0.8.30;
 
 import { UntilThenV1 } from "src/UntilThenV1.sol";
+import { GiftNFT } from "src/GiftNFT.sol";
 import { Test } from "forge-std/Test.sol";
 
 contract UntilThenV1Test is Test {
     UntilThenV1 internal untilThenV1;
+    GiftNFT internal giftNFT;
     address internal OWNER = makeAddr("OWNER");
     address internal USER_SENDER = makeAddr("USER_SENDER");
     address internal USER_RECEIVER = makeAddr("USER_RECEIVER");
@@ -14,14 +16,36 @@ contract UntilThenV1Test is Test {
     uint256 constant CURRENCY_GIFT_FEE = 0.0001 ether;
     uint256 constant INITIAL_BALANCE = 10 ether;
     uint256 constant CURRENCY_GIFT_AMOUNT = 2 ether;
+    string constant CONTENT_GIFT = "This is a gift letter";
+    uint256 internal releaseTimestamp = block.timestamp + 2 weeks;
 
     event GiftCreated(address indexed sender, address indexed receiver, uint256 giftId);
+    event GiftClaimed(
+        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes contentHash
+    );
 
     function setUp() public {
-        vm.prank(OWNER);
-        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE);
+        vm.startPrank(OWNER);
+        giftNFT = new GiftNFT(OWNER);
+        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT));
+        giftNFT.transferOwnership(address(untilThenV1));
+        vm.stopPrank();
 
         vm.deal(USER_SENDER, INITIAL_BALANCE);
+    }
+
+    function _createGift() private returns (uint256 giftId) {
+        uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
+        vm.prank(USER_SENDER);
+        giftId = untilThenV1.createGift{ value: amount }(
+            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.NONE
+        );
+    }
+
+    function _claimGift(uint256 giftId) private returns (uint256 nftId) {
+        vm.warp(releaseTimestamp);
+        vm.prank(USER_RECEIVER);
+        nftId = untilThenV1.claimGift(giftId);
     }
 
     // createGift
@@ -31,10 +55,7 @@ contract UntilThenV1Test is Test {
         vm.expectEmit(true, true, false, true);
         emit GiftCreated(USER_SENDER, USER_RECEIVER, 1);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER,
-            block.timestamp + 1 days,
-            abi.encodePacked("letter"),
-            UntilThenV1.AvailableYieldStrategies.NONE
+            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.NONE
         );
 
         vm.assertEq(untilThenV1.getTotalGifts(), 1);
@@ -44,8 +65,8 @@ contract UntilThenV1Test is Test {
         vm.assertEq(gift.sender, USER_SENDER);
         vm.assertEq(gift.receiver, USER_RECEIVER);
         vm.assertEq(gift.amount, CURRENCY_GIFT_AMOUNT);
-        vm.assertEq(gift.releaseTimestamp, block.timestamp + 1 days);
-        vm.assertEq(gift.contentHash, abi.encodePacked("letter"));
+        vm.assertEq(gift.releaseTimestamp, releaseTimestamp);
+        vm.assertEq(gift.contentHash, abi.encodePacked(CONTENT_GIFT));
         vm.assertEq(uint256(gift.yieldStrategy.strategy), uint256(UntilThenV1.AvailableYieldStrategies.NONE));
         vm.assertEq(gift.yieldStrategy.yieldToken, address(0));
         vm.assertEq(gift.nftClaimedId, 0);
@@ -59,10 +80,7 @@ contract UntilThenV1Test is Test {
         uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER,
-            block.timestamp + 1 days,
-            abi.encodePacked("letter"),
-            UntilThenV1.AvailableYieldStrategies.AAVE
+            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.AAVE
         );
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
@@ -74,7 +92,7 @@ contract UntilThenV1Test is Test {
         uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, block.timestamp + 1 days, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
+            USER_RECEIVER, releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
@@ -86,7 +104,7 @@ contract UntilThenV1Test is Test {
         vm.startPrank(USER_SENDER);
         vm.expectRevert(UntilThenV1.UntilThenV1__ReceiverCannotBeZeroAddress.selector);
         untilThenV1.createGift{ value: CURRENCY_GIFT_FEE }(
-            address(0), block.timestamp + 1 days, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
+            address(0), releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 
         vm.warp(block.timestamp + 10 days);
@@ -97,7 +115,47 @@ contract UntilThenV1Test is Test {
 
         vm.expectRevert(UntilThenV1.UntilThenV1__InvalidGiftFee.selector);
         untilThenV1.createGift{ value: 0 }(
-            USER_RECEIVER, block.timestamp + 1 days, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
+            USER_RECEIVER, releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
+    }
+
+    // claimGift
+    function test_claimGift() public {
+        uint256 giftId = _createGift();
+        uint256 receiverInitialbalance = USER_RECEIVER.balance;
+
+        vm.warp(block.timestamp + 2 weeks);
+        vm.prank(USER_RECEIVER);
+        vm.expectEmit(true, true, false, true);
+        emit GiftClaimed(USER_RECEIVER, giftId, CURRENCY_GIFT_AMOUNT, 1, abi.encodePacked(CONTENT_GIFT));
+        uint256 nftId = untilThenV1.claimGift(giftId);
+
+        UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
+        vm.assertEq(uint256(gift.status), uint256(UntilThenV1.GiftStatus.CLAIMED));
+        vm.assertEq(gift.nftClaimedId, nftId);
+        vm.assertEq(giftNFT.ownerOf(nftId), USER_RECEIVER);
+        vm.assertEq(USER_RECEIVER.balance, receiverInitialbalance + CURRENCY_GIFT_AMOUNT);
+    }
+
+    function test_claimGiftRevertsWithInvalidParams() public {
+        uint256 giftId = _createGift();
+
+        vm.prank(USER_RECEIVER);
+        vm.expectRevert(UntilThenV1.UntilThenV1__GiftCannotBeClaimedYet.selector);
+        untilThenV1.claimGift(giftId);
+
+        vm.warp(block.timestamp + 2 weeks);
+        vm.prank(USER_RECEIVER);
+        vm.expectRevert(UntilThenV1.UntilThenV1__GiftDoesNotExist.selector);
+        untilThenV1.claimGift(2);
+
+        vm.prank(address(this));
+        vm.expectRevert(UntilThenV1.UntilThenV1__NotAuthorizedToClaimGift.selector);
+        untilThenV1.claimGift(giftId);
+
+        _claimGift(giftId);
+        vm.prank(USER_RECEIVER);
+        vm.expectRevert(UntilThenV1.UntilThenV1__GiftHasBeenClaimedAlready.selector);
+        untilThenV1.claimGift(giftId);
     }
 }

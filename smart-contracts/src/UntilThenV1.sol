@@ -5,18 +5,21 @@ pragma solidity ^0.8.30;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { console } from "forge-std/console.sol";
+import { GiftNFT } from "src/GiftNFT.sol";
 
-contract UntilThenV1 is Ownable {
+contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// ERRORS
     error UntilThenV1__ReceiverCannotBeZeroAddress();
     error UntilThenV1__InvalidGiftFee();
-    error UntilThenV1__InvalidcontentHash();
     error UntilThenV1__ReleaseTimestampCannotBeInThePast();
     error UntilThenV1__TransferFailed();
-    error UntilThenV1__NotEnoughERC20Allowance(uint256 currentAllowance);
-    error UntilThenV1__InvalidNFTAddress();
-    error UntilThenV1__SenderDoesNotOwnNFT();
     error UntilThenV1__InvalidYieldStrategy();
+    error UntilThenV1__GiftDoesNotExist();
+    error UntilThenV1__GiftHasBeenClaimedAlready();
+    error UntilThenV1__NotAuthorizedToClaimGift();
+    error UntilThenV1__GiftCannotBeClaimedYet();
 
     /// TYPES
     enum GiftStatus {
@@ -49,31 +52,35 @@ contract UntilThenV1 is Ownable {
     }
 
     /// STATE VARIABLES
-    uint256 private totalGifts;
-
-    mapping(address receiver => Gift[] gifts) private receiverGifts;
-    mapping(address sender => Gift[] gifts) private senderGifts;
-    mapping(uint256 id => Gift gift) private gifts;
+    uint256 internal totalGifts;
+    GiftNFT internal giftNFTContract;
+    mapping(address receiver => Gift[] gifts) internal receiverGifts;
+    mapping(address sender => Gift[] gifts) internal senderGifts;
+    mapping(uint256 id => Gift gift) internal gifts;
 
     // @notice Base token deposited for gifts
-    mapping(address sender => uint256 amount) private amountDeposited;
+    mapping(address sender => uint256 amount) internal amountDeposited;
 
     // @notice fee when sending only content
-    uint256 private contentGiftFee;
+    uint256 internal contentGiftFee;
 
     // @notice fee when sending currency, token or an NFT
-    uint256 private currencyGiftFee;
+    uint256 internal currencyGiftFee;
 
     /// EVENTS
     event GiftCreated(address indexed sender, address indexed receiver, uint256 giftId);
     event Withdraw(address indexed receiver, uint256 amount);
+    event GiftClaimed(
+        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes contentHash
+    );
 
     /// FUNCTIONS
 
     // CONSTRUCTOR
-    constructor(uint256 _contentGiftFee, uint256 _currencyGiftFee) Ownable(msg.sender) {
+    constructor(uint256 _contentGiftFee, uint256 _currencyGiftFee, address _giftNFTContract) Ownable(msg.sender) {
         contentGiftFee = _contentGiftFee;
         currencyGiftFee = _currencyGiftFee;
+        giftNFTContract = GiftNFT(_giftNFTContract);
     }
 
     // EXTERNAL FUNCTIONS
@@ -128,6 +135,40 @@ contract UntilThenV1 is Ownable {
         receiverGifts[receiver].push(gift);
         // TODO: Yield
         emit GiftCreated(msg.sender, receiver, giftId);
+    }
+
+    function claimGift(uint256 giftId) external nonReentrant returns (uint256 nftId) {
+        Gift storage gift = gifts[giftId];
+        if (gift.status == GiftStatus.ABSENT) {
+            revert UntilThenV1__GiftDoesNotExist();
+        }
+
+        if (gift.status == GiftStatus.CLAIMED) {
+            revert UntilThenV1__GiftHasBeenClaimedAlready();
+        }
+        if (gift.receiver != msg.sender) {
+            revert UntilThenV1__NotAuthorizedToClaimGift();
+        }
+        if (gift.releaseTimestamp > block.timestamp) {
+            revert UntilThenV1__GiftCannotBeClaimedYet();
+        }
+
+        gift.status = GiftStatus.CLAIMED;
+
+        // TODO: Unyield token. Get fee
+        uint256 giftAmountToClaim = gift.amount;
+
+        nftId = giftNFTContract.mint(msg.sender, gift.id, gift.contentHash);
+        gift.nftClaimedId = nftId;
+
+        if (gift.yieldStrategy.strategy == AvailableYieldStrategies.NONE) {
+            (bool success,) = msg.sender.call{ value: giftAmountToClaim }("");
+            if (!success) {
+                revert UntilThenV1__TransferFailed();
+            }
+        }
+        emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId, gift.contentHash);
+        return nftId;
     }
 
     function withdrawBalance() external onlyOwner {
