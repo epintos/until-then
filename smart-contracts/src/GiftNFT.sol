@@ -20,15 +20,7 @@ contract GiftNFT is Ownable, ERC721 {
 
     constructor(address untilThenContract) Ownable(untilThenContract) ERC721("UntilThenGift", "UNTIL") { }
 
-    function mint(
-        address to,
-        uint256 giftId,
-        bytes calldata contentHash
-    )
-        external
-        onlyOwner
-        returns (uint256 tokenId)
-    {
+    function mint(address to, uint256 giftId) external onlyOwner returns (uint256 tokenId) {
         if (to == address(0)) {
             revert GiftNFT__ReceiverCannotBeZeroAddress();
         }
@@ -37,8 +29,13 @@ contract GiftNFT is Ownable, ERC721 {
             revert GiftNFT__InvalidGiftId();
         }
         tokenId = ++totalSupply;
-        tokenMetadata[tokenId] = Metadata({ giftId: giftId, contentHash: contentHash });
+        tokenMetadata[tokenId] = Metadata({ giftId: giftId, contentHash: hex"" });
         _mint(to, tokenId);
+    }
+
+    function updateContentHash(uint256 tokenId, bytes calldata publicContentHash) external onlyOwner {
+        _ownerOf(tokenId);
+        tokenMetadata[tokenId].contentHash = publicContentHash;
     }
 
     function getMetadata(uint256 tokenId) external view returns (Metadata memory) {

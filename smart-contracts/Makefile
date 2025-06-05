@@ -10,7 +10,8 @@ test-fork-sepolia :; @forge test --fork-url $(SEPOLIA_RPC_URL)
 
 install :
 	forge install foundry-rs/forge-std@v1.9.7 --no-git && \
-	forge install openzeppelin/openzeppelin-contracts@v5.3.0 --no-git
+	forge install openzeppelin/openzeppelin-contracts@v5.3.0 --no-git && \
+	forge install smartcontractkit/chainlink-brownie-contracts@1.3.0 --no-git
 
 deploy-sepolia :
 	@forge script script/Deploy.s.sol:Deploy --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_ACCOUNT) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv

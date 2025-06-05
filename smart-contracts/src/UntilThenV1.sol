@@ -70,9 +70,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// EVENTS
     event GiftCreated(address indexed sender, address indexed receiver, uint256 giftId);
     event Withdraw(address indexed receiver, uint256 amount);
-    event GiftClaimed(
-        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes contentHash
-    );
+    event GiftClaimed(address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId);
 
     /// FUNCTIONS
 
@@ -158,7 +156,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         // TODO: Unyield token. Get fee
         uint256 giftAmountToClaim = gift.amount;
 
-        nftId = giftNFTContract.mint(msg.sender, gift.id, gift.contentHash);
+        nftId = giftNFTContract.mint(msg.sender, gift.id);
         gift.nftClaimedId = nftId;
 
         if (gift.yieldStrategy.strategy == AvailableYieldStrategies.NONE) {
@@ -167,7 +165,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
                 revert UntilThenV1__TransferFailed();
             }
         }
-        emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId, gift.contentHash);
+        emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId);
         return nftId;
     }
 
