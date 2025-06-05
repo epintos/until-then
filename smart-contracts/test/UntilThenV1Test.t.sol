@@ -5,6 +5,7 @@ pragma solidity ^0.8.30;
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { Test } from "forge-std/Test.sol";
+import { IPFSFunctionsConsumerMock } from "test/mocks/IPFSFunctionsConsumerMock.sol";
 
 contract UntilThenV1Test is Test {
     UntilThenV1 internal untilThenV1;
@@ -16,19 +17,24 @@ contract UntilThenV1Test is Test {
     uint256 constant CURRENCY_GIFT_FEE = 0.0001 ether;
     uint256 constant INITIAL_BALANCE = 10 ether;
     uint256 constant CURRENCY_GIFT_AMOUNT = 2 ether;
-    string constant CONTENT_GIFT = "This is a gift letter";
+    string constant CONTENT_HASH = "PUBLIC_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
+    string constant CONTENT_PRIVATE_HASH = "PRIVATE_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
     uint256 internal releaseTimestamp = block.timestamp + 2 weeks;
+    IPFSFunctionsConsumerMock consumer;
 
     event GiftCreated(address indexed sender, address indexed receiver, uint256 giftId);
     event GiftClaimed(
-        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes contentHash
+        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes32 requestId
     );
 
     function setUp() public {
         vm.startPrank(OWNER);
-        giftNFT = new GiftNFT(OWNER);
-        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT));
+        giftNFT = new GiftNFT();
+        consumer = new IPFSFunctionsConsumerMock(0, address(giftNFT));
+        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT), address(consumer));
+        giftNFT.grantMintAndBurnRole(address(untilThenV1));
         giftNFT.transferOwnership(address(untilThenV1));
+        // consumer.transferOwnership(address(untilThenV1));
         vm.stopPrank();
 
         vm.deal(USER_SENDER, INITIAL_BALANCE);
@@ -38,7 +44,7 @@ contract UntilThenV1Test is Test {
         uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.NONE
+            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.NONE
         );
     }
 
@@ -55,7 +61,7 @@ contract UntilThenV1Test is Test {
         vm.expectEmit(true, true, false, true);
         emit GiftCreated(USER_SENDER, USER_RECEIVER, 1);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.NONE
+            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.NONE
         );
 
         vm.assertEq(untilThenV1.getTotalGifts(), 1);
@@ -66,7 +72,7 @@ contract UntilThenV1Test is Test {
         vm.assertEq(gift.receiver, USER_RECEIVER);
         vm.assertEq(gift.amount, CURRENCY_GIFT_AMOUNT);
         vm.assertEq(gift.releaseTimestamp, releaseTimestamp);
-        vm.assertEq(gift.contentHash, abi.encodePacked(CONTENT_GIFT));
+        vm.assertEq(gift.contentHash, CONTENT_HASH);
         vm.assertEq(uint256(gift.yieldStrategy.strategy), uint256(UntilThenV1.AvailableYieldStrategies.NONE));
         vm.assertEq(gift.yieldStrategy.yieldToken, address(0));
         vm.assertEq(gift.nftClaimedId, 0);
@@ -80,7 +86,7 @@ contract UntilThenV1Test is Test {
         uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, abi.encodePacked(CONTENT_GIFT), UntilThenV1.AvailableYieldStrategies.AAVE
+            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.AAVE
         );
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
@@ -127,7 +133,7 @@ contract UntilThenV1Test is Test {
         vm.warp(block.timestamp + 2 weeks);
         vm.prank(USER_RECEIVER);
         vm.expectEmit(true, true, false, true);
-        emit GiftClaimed(USER_RECEIVER, giftId, CURRENCY_GIFT_AMOUNT, 1, abi.encodePacked(CONTENT_GIFT));
+        emit GiftClaimed(USER_RECEIVER, giftId, CURRENCY_GIFT_AMOUNT, 1, 0);
         uint256 nftId = untilThenV1.claimGift(giftId);
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);

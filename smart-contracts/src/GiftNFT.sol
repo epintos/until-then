@@ -3,12 +3,16 @@
 pragma solidity ^0.8.30;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract GiftNFT is Ownable, ERC721 {
+contract GiftNFT is ERC721, AccessControl, Ownable {
     /// ERRORS
     error GiftNFT__ReceiverCannotBeZeroAddress();
     error GiftNFT__InvalidGiftId();
+
+    bytes32 public constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
+    bytes32 public constant UPDATE_CONTENT_ROLE = keccak256("UPDATE_CONTENT_ROLE");
 
     uint256 internal totalSupply;
     mapping(uint256 tokenId => Metadata metadata) private tokenMetadata;
@@ -18,9 +22,19 @@ contract GiftNFT is Ownable, ERC721 {
         bytes contentHash;
     }
 
-    constructor(address untilThenContract) Ownable(untilThenContract) ERC721("UntilThenGift", "UNTIL") { }
+    event ContentHashUpdated(uint256 indexed tokenId, bytes publicContentHash);
 
-    function mint(address to, uint256 giftId) external onlyOwner returns (uint256 tokenId) {
+    constructor() Ownable(msg.sender) ERC721("UntilThenGift", "UNTIL") { }
+
+    function grantMintAndBurnRole(address account) external onlyOwner {
+        _grantRole(MINT_AND_BURN_ROLE, account);
+    }
+
+    function grantUpdateContentRole(address account) external onlyOwner {
+        _grantRole(UPDATE_CONTENT_ROLE, account);
+    }
+
+    function mint(address to, uint256 giftId) external onlyRole(MINT_AND_BURN_ROLE) returns (uint256 tokenId) {
         if (to == address(0)) {
             revert GiftNFT__ReceiverCannotBeZeroAddress();
         }
@@ -33,9 +47,20 @@ contract GiftNFT is Ownable, ERC721 {
         _mint(to, tokenId);
     }
 
-    function updateContentHash(uint256 tokenId, bytes calldata publicContentHash) external onlyOwner {
+    function updateContentHash(
+        uint256 tokenId,
+        bytes calldata publicContentHash
+    )
+        external
+        onlyRole(UPDATE_CONTENT_ROLE)
+    {
         _ownerOf(tokenId);
         tokenMetadata[tokenId].contentHash = publicContentHash;
+        emit ContentHashUpdated(tokenId, publicContentHash);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
     function getMetadata(uint256 tokenId) external view returns (Metadata memory) {

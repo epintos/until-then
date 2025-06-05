@@ -5,6 +5,7 @@ pragma solidity ^0.8.30;
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { Test } from "forge-std/Test.sol";
+import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
 
 contract GiftNFTTest is Test {
     UntilThenV1 internal untilThenV1;
@@ -17,24 +18,27 @@ contract GiftNFTTest is Test {
 
     function setUp() public {
         vm.startPrank(OWNER);
-        giftNFT = new GiftNFT(OWNER);
-        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT));
+        giftNFT = new GiftNFT();
+        IPFSFunctionsConsumer consumer = new IPFSFunctionsConsumer(0, address(giftNFT));
+        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT), address(consumer));
+        giftNFT.grantUpdateContentRole(address(consumer));
+        giftNFT.grantMintAndBurnRole(address(untilThenV1));
         giftNFT.transferOwnership(address(untilThenV1));
+        consumer.transferOwnership(address(untilThenV1));
         vm.stopPrank();
     }
 
     // mint
     function test_mint() public {
         uint256 giftId = 1;
-        bytes memory contentHash = abi.encodePacked(CONTENT_GIFT);
 
         vm.prank(address(untilThenV1));
-        uint256 tokenId = giftNFT.mint(USER, giftId, contentHash);
+        uint256 tokenId = giftNFT.mint(USER, giftId);
 
         assertEq(giftNFT.ownerOf(tokenId), USER);
 
         GiftNFT.Metadata memory metadata = giftNFT.getMetadata(tokenId);
         assertEq(metadata.giftId, giftId);
-        assertEq(metadata.contentHash, contentHash);
+        assertEq(metadata.contentHash, hex"");
     }
 }

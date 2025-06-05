@@ -8,6 +8,8 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { console } from "forge-std/console.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
+import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// ERRORS
@@ -46,7 +48,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         address receiver;
         uint256 amount;
         uint256 releaseTimestamp;
-        bytes contentHash;
+        string contentHash;
         YieldStrategy yieldStrategy;
         uint256 nftClaimedId;
     }
@@ -54,6 +56,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// STATE VARIABLES
     uint256 internal totalGifts;
     GiftNFT internal giftNFTContract;
+    IPFSFunctionsConsumer internal ipfsFunctionsConsumer;
     mapping(address receiver => Gift[] gifts) internal receiverGifts;
     mapping(address sender => Gift[] gifts) internal senderGifts;
     mapping(uint256 id => Gift gift) internal gifts;
@@ -70,22 +73,32 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// EVENTS
     event GiftCreated(address indexed sender, address indexed receiver, uint256 giftId);
     event Withdraw(address indexed receiver, uint256 amount);
-    event GiftClaimed(address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId);
+    event GiftClaimed(
+        address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes32 requestId
+    );
 
     /// FUNCTIONS
 
     // CONSTRUCTOR
-    constructor(uint256 _contentGiftFee, uint256 _currencyGiftFee, address _giftNFTContract) Ownable(msg.sender) {
+    constructor(
+        uint256 _contentGiftFee,
+        uint256 _currencyGiftFee,
+        address _giftNFTContract,
+        address _ipfsFunctionsConsumer
+    )
+        Ownable(msg.sender)
+    {
         contentGiftFee = _contentGiftFee;
         currencyGiftFee = _currencyGiftFee;
         giftNFTContract = GiftNFT(_giftNFTContract);
+        ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
     }
 
     // EXTERNAL FUNCTIONS
     function createGift(
         address receiver,
         uint256 releaseTimestamp,
-        bytes calldata contentHash,
+        string calldata contentHash,
         AvailableYieldStrategies yieldStrategy
     )
         external
@@ -119,7 +132,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
             status: GiftStatus.PENDING,
             sender: msg.sender,
             receiver: receiver,
-            amount: _deductFee(msg.value, contentHash.length != 0, yield),
+            amount: _deductFee(msg.value, bytes(contentHash).length != 0, yield),
             releaseTimestamp: releaseTimestamp,
             contentHash: contentHash,
             yieldStrategy: YieldStrategy({
@@ -165,7 +178,14 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
                 revert UntilThenV1__TransferFailed();
             }
         }
-        emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId);
+
+        string[] memory args = new string[](3);
+        args[0] = string(gift.contentHash);
+        args[1] = Strings.toHexString(uint160(gift.sender), 20);
+        args[2] = Strings.toHexString(uint160(gift.receiver), 20);
+        bytes32 requestId = ipfsFunctionsConsumer.sendRequest(nftId, args);
+
+        emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId, requestId);
         return nftId;
     }
 
