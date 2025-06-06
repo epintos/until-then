@@ -6,6 +6,8 @@ import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { Test } from "forge-std/Test.sol";
 import { IPFSFunctionsConsumerMock } from "test/mocks/IPFSFunctionsConsumerMock.sol";
+import { HelperConfig } from "script/HelperConfig.s.sol";
+import { Deploy } from "script/Deploy.s.sol";
 
 contract UntilThenV1Test is Test {
     UntilThenV1 internal untilThenV1;
@@ -13,12 +15,12 @@ contract UntilThenV1Test is Test {
     address internal OWNER = makeAddr("OWNER");
     address internal USER_SENDER = makeAddr("USER_SENDER");
     address internal USER_RECEIVER = makeAddr("USER_RECEIVER");
-    uint256 constant CONTENT_GIFT_FEE = 0.01 ether;
-    uint256 constant CURRENCY_GIFT_FEE = 0.0001 ether;
     uint256 constant INITIAL_BALANCE = 10 ether;
     uint256 constant CURRENCY_GIFT_AMOUNT = 2 ether;
-    string constant CONTENT_HASH = "PUBLIC_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
+    string constant CONTENT_PUBLIC_HASH = "PUBLIC_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
     string constant CONTENT_PRIVATE_HASH = "PRIVATE_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
+    uint256 internal contentGiftFee;
+    uint256 internal currencyGiftFee;
     uint256 internal releaseTimestamp = block.timestamp + 2 weeks;
     IPFSFunctionsConsumerMock consumer;
 
@@ -28,23 +30,23 @@ contract UntilThenV1Test is Test {
     );
 
     function setUp() public {
-        vm.startPrank(OWNER);
-        giftNFT = new GiftNFT();
-        consumer = new IPFSFunctionsConsumerMock(0, address(giftNFT));
-        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT), address(consumer));
-        giftNFT.grantMintAndBurnRole(address(untilThenV1));
-        giftNFT.transferOwnership(address(untilThenV1));
-        // consumer.transferOwnership(address(untilThenV1));
-        vm.stopPrank();
+        Deploy deployer = new Deploy();
+        HelperConfig helperConfig;
+        (untilThenV1, giftNFT, helperConfig) = deployer.run();
+        (,,,,, contentGiftFee, currencyGiftFee,) = helperConfig.activeNetworkConfig();
+        consumer = IPFSFunctionsConsumerMock(address(untilThenV1.getIPFSConsumer()));
+
+        vm.prank(address(deployer));
+        untilThenV1.transferOwnership(OWNER);
 
         vm.deal(USER_SENDER, INITIAL_BALANCE);
     }
 
     function _createGift() private returns (uint256 giftId) {
-        uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
+        uint256 amount = contentGiftFee + currencyGiftFee + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.NONE
+            USER_RECEIVER, releaseTimestamp, CONTENT_PUBLIC_HASH, UntilThenV1.AvailableYieldStrategies.NONE
         );
     }
 
@@ -56,12 +58,12 @@ contract UntilThenV1Test is Test {
 
     // createGift
     function test_createGift() public {
-        uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
+        uint256 amount = contentGiftFee + currencyGiftFee + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         vm.expectEmit(true, true, false, true);
         emit GiftCreated(USER_SENDER, USER_RECEIVER, 1);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.NONE
+            USER_RECEIVER, releaseTimestamp, CONTENT_PUBLIC_HASH, UntilThenV1.AvailableYieldStrategies.NONE
         );
 
         vm.assertEq(untilThenV1.getTotalGifts(), 1);
@@ -72,7 +74,7 @@ contract UntilThenV1Test is Test {
         vm.assertEq(gift.receiver, USER_RECEIVER);
         vm.assertEq(gift.amount, CURRENCY_GIFT_AMOUNT);
         vm.assertEq(gift.releaseTimestamp, releaseTimestamp);
-        vm.assertEq(gift.contentHash, CONTENT_HASH);
+        vm.assertEq(gift.contentHash, CONTENT_PUBLIC_HASH);
         vm.assertEq(uint256(gift.yieldStrategy.strategy), uint256(UntilThenV1.AvailableYieldStrategies.NONE));
         vm.assertEq(gift.yieldStrategy.yieldToken, address(0));
         vm.assertEq(gift.nftClaimedId, 0);
@@ -83,39 +85,39 @@ contract UntilThenV1Test is Test {
     }
 
     function test_createGiftWithYield() public {
-        uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
+        uint256 amount = contentGiftFee + currencyGiftFee + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
-            USER_RECEIVER, releaseTimestamp, CONTENT_HASH, UntilThenV1.AvailableYieldStrategies.AAVE
+            USER_RECEIVER, releaseTimestamp, CONTENT_PUBLIC_HASH, UntilThenV1.AvailableYieldStrategies.AAVE
         );
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
-        vm.assertEq(gift.amount, CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT);
+        vm.assertEq(gift.amount, currencyGiftFee + CURRENCY_GIFT_AMOUNT);
         vm.assertEq(uint256(gift.yieldStrategy.strategy), uint256(UntilThenV1.AvailableYieldStrategies.AAVE));
     }
 
     function test_createGiftWithNoContent() public {
-        uint256 amount = CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT;
+        uint256 amount = contentGiftFee + currencyGiftFee + CURRENCY_GIFT_AMOUNT;
         vm.prank(USER_SENDER);
         uint256 giftId = untilThenV1.createGift{ value: amount }(
             USER_RECEIVER, releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
-        vm.assertEq(gift.amount, CONTENT_GIFT_FEE + CURRENCY_GIFT_FEE + CURRENCY_GIFT_AMOUNT);
+        vm.assertEq(gift.amount, contentGiftFee + currencyGiftFee + CURRENCY_GIFT_AMOUNT);
         vm.assertEq(uint256(gift.yieldStrategy.strategy), uint256(UntilThenV1.AvailableYieldStrategies.COMPOUND));
     }
 
     function test_createGiftRevertsWithInvalidPArams() public {
         vm.startPrank(USER_SENDER);
         vm.expectRevert(UntilThenV1.UntilThenV1__ReceiverCannotBeZeroAddress.selector);
-        untilThenV1.createGift{ value: CURRENCY_GIFT_FEE }(
+        untilThenV1.createGift{ value: currencyGiftFee }(
             address(0), releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 
         vm.warp(block.timestamp + 10 days);
         vm.expectRevert(UntilThenV1.UntilThenV1__ReleaseTimestampCannotBeInThePast.selector);
-        untilThenV1.createGift{ value: CURRENCY_GIFT_FEE }(
+        untilThenV1.createGift{ value: currencyGiftFee }(
             USER_RECEIVER, block.timestamp - 1 days, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 

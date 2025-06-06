@@ -20,11 +20,6 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
 
     event GiftContentHashUpdated(bytes32 indexed requestId, string publicContentHash, bytes err);
 
-    // Router address - Hardcoded for Sepolia
-    // Check to get the router address for your supported network
-    // https://docs.chain.link/chainlink-functions/supported-networks
-    address router = 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0;
-
     string source = "const cid = args[0];" "const senderAddress = args[1];" "const receiverAddress = args[2];"
         "if (!cid) throw new Error(\"Missing CID\");" "if (!senderAddress) throw new Error(\"Missing senderAddress\");"
         "if (!receiverAddress) throw new Error(\"Missing receiverAddress\");" "" "function sleep(ms) {"
@@ -64,21 +59,29 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
         "  // await deletePrivateFile(privateInfo.id);" "} catch (error) {" "  console.log(\"Error occurred:\", error);"
         "}" "" "return Functions.encodeString(newCid);" "";
 
-    //Callback gas limit
-    uint32 gasLimit = 300_000;
+    address internal immutable router;
+    uint32 internal gasLimit;
+    bytes32 internal immutable donID;
+    uint64 internal subscriptionId;
 
-    // donID - Hardcoded for Sepolia
-    // Check to get the donID for your supported network https://docs.chain.link/chainlink-functions/supported-networks
-    bytes32 donID = 0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000;
-
-    // State variable to store the returned character information
-    uint64 public subscriptionId;
     GiftNFT internal giftNFTContract;
-    mapping(bytes32 requestId => FunctionRequest request) public requests;
+    mapping(bytes32 requestId => FunctionRequest request) internal requests;
 
-    constructor(uint64 _subscriptionId, address _giftNFTContract) FunctionsClient(router) Ownable(msg.sender) {
+    constructor(
+        address _giftNFTContract,
+        uint64 _subscriptionId,
+        address _router,
+        bytes32 _donId,
+        uint32 _gasLimit
+    )
+        FunctionsClient(router)
+        Ownable(msg.sender)
+    {
         subscriptionId = _subscriptionId;
         giftNFTContract = GiftNFT(_giftNFTContract);
+        router = _router;
+        donID = _donId;
+        gasLimit = _gasLimit;
     }
 
     function sendRequest(uint256 nftId, string[] calldata args) external onlyOwner returns (bytes32 requestId) {
@@ -100,7 +103,7 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
             request.error = err;
         }
         request.publicContentHash = string(response);
-        giftNFTContract.updateContentHash(request.nftId, bytes(response));
+        giftNFTContract.updateContentHash(request.nftId, string(response));
 
         emit GiftContentHashUpdated(requestId, string(response), err);
     }

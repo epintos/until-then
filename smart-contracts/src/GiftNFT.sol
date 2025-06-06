@@ -19,10 +19,10 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
 
     struct Metadata {
         uint256 giftId;
-        bytes contentHash;
+        string contentHash;
     }
 
-    event ContentHashUpdated(uint256 indexed tokenId, bytes publicContentHash);
+    event ContentHashUpdated(uint256 indexed tokenId, string publicContentHash);
 
     constructor() Ownable(msg.sender) ERC721("UntilThenGift", "UNTIL") { }
 
@@ -49,7 +49,7 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
 
     function updateContentHash(
         uint256 tokenId,
-        bytes calldata publicContentHash
+        string calldata publicContentHash
     )
         external
         onlyRole(UPDATE_CONTENT_ROLE)

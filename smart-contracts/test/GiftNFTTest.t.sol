@@ -5,40 +5,58 @@ pragma solidity ^0.8.30;
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { Test } from "forge-std/Test.sol";
-import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
+import { IPFSFunctionsConsumerMock } from "test/mocks/IPFSFunctionsConsumerMock.sol";
+import { HelperConfig } from "script/HelperConfig.s.sol";
+import { Deploy } from "script/Deploy.s.sol";
 
 contract GiftNFTTest is Test {
     UntilThenV1 internal untilThenV1;
     GiftNFT internal giftNFT;
     address internal OWNER = makeAddr("OWNER");
     address internal USER = makeAddr("USER");
-    uint256 constant CONTENT_GIFT_FEE = 0.01 ether;
-    uint256 constant CURRENCY_GIFT_FEE = 0.0001 ether;
-    string constant CONTENT_GIFT = "This is a gift letter";
+    uint256 internal contentGiftFee;
+    uint256 internal currencyGiftFee;
+    string constant CONTENT_PUBLIC_HASH = "PUBLIC_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
+    uint256 constant GIFT_ID = 1;
+    IPFSFunctionsConsumerMock consumer;
+
+    event ContentHashUpdated(uint256 indexed tokenId, string publicContentHash);
 
     function setUp() public {
-        vm.startPrank(OWNER);
-        giftNFT = new GiftNFT();
-        IPFSFunctionsConsumer consumer = new IPFSFunctionsConsumer(0, address(giftNFT));
-        untilThenV1 = new UntilThenV1(CONTENT_GIFT_FEE, CURRENCY_GIFT_FEE, address(giftNFT), address(consumer));
-        giftNFT.grantUpdateContentRole(address(consumer));
-        giftNFT.grantMintAndBurnRole(address(untilThenV1));
-        giftNFT.transferOwnership(address(untilThenV1));
-        consumer.transferOwnership(address(untilThenV1));
+        Deploy deployer = new Deploy();
+        HelperConfig helperConfig;
+        (untilThenV1, giftNFT, helperConfig) = deployer.run();
+        (,,,,, contentGiftFee, currencyGiftFee,) = helperConfig.activeNetworkConfig();
+        consumer = IPFSFunctionsConsumerMock(address(untilThenV1.getIPFSConsumer()));
+
+        vm.prank(address(deployer));
+        untilThenV1.transferOwnership(OWNER);
         vm.stopPrank();
     }
 
     // mint
     function test_mint() public {
-        uint256 giftId = 1;
-
         vm.prank(address(untilThenV1));
-        uint256 tokenId = giftNFT.mint(USER, giftId);
+        uint256 tokenId = giftNFT.mint(USER, GIFT_ID);
 
         assertEq(giftNFT.ownerOf(tokenId), USER);
 
         GiftNFT.Metadata memory metadata = giftNFT.getMetadata(tokenId);
-        assertEq(metadata.giftId, giftId);
+        assertEq(metadata.giftId, GIFT_ID);
         assertEq(metadata.contentHash, hex"");
+    }
+
+    // updateContentHash
+    function test_updateContentHash() public {
+        vm.prank(address(untilThenV1));
+        uint256 tokenId = giftNFT.mint(USER, GIFT_ID);
+
+        vm.prank(address(consumer));
+        vm.expectEmit(true, false, false, true);
+        emit ContentHashUpdated(tokenId, CONTENT_PUBLIC_HASH);
+        giftNFT.updateContentHash(tokenId, CONTENT_PUBLIC_HASH);
+
+        GiftNFT.Metadata memory metadata = giftNFT.getMetadata(tokenId);
+        assertEq(metadata.contentHash, CONTENT_PUBLIC_HASH);
     }
 }

@@ -234,4 +234,8 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     function getReceiverGifts(address receiver) external view returns (Gift[] memory) {
         return receiverGifts[receiver];
     }
+
+    function getIPFSConsumer() external view returns (address) {
+        return address(ipfsFunctionsConsumer);
+    }
 }

@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 
-contract IPFSFunctionsConsumerMock {
-    uint64 public subscriptionId;
+contract IPFSFunctionsConsumerMock is Ownable {
     GiftNFT internal giftNFTContract;
 
-    constructor(uint64 _subscriptionId, address _giftNFTContract) {
-        subscriptionId = _subscriptionId;
+    constructor(address _giftNFTContract) Ownable(msg.sender) {
         giftNFTContract = GiftNFT(_giftNFTContract);
     }
 
