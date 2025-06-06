@@ -1,0 +1,19 @@
+{
+  "name": "until-then-chainlink-function",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Until then Chainlink Function",
+  "author": "epintos",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@chainlink/env-enc": "^1.0.5",
+    "@chainlink/functions-toolkit": "^0.3.2",
+    "bcrypto": "^5.5.2",
+    "ethers": "^5.7.2",
+    "prompt-sync": "^4.2.0"
+  }
+}

@@ -1,6 +1,7 @@
 const cid = args[0];
 const senderAddress = args[1];
 const receiverAddress = args[2];
+console.log(secrets);
 if (!cid) throw new Error("Missing CID");
 if (!senderAddress) throw new Error("Missing senderAddress");
 if (!receiverAddress) throw new Error("Missing receiverAddress");
