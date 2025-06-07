@@ -13,6 +13,7 @@
     "@chainlink/env-enc": "^1.0.5",
     "@chainlink/functions-toolkit": "^0.3.2",
     "bcrypto": "^5.5.2",
+    "dotenv": "^16.5.0",
     "ethers": "^5.7.2",
     "prompt-sync": "^4.2.0"
   }

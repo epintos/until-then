@@ -1,41 +1,36 @@
 // utils/request.js
-import { config } from "@chainlink/env-enc";
+import {
+  decodeResult,
+  FulfillmentCode,
+  ResponseListener,
+  ReturnType,
+} from "@chainlink/functions-toolkit";
+import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loadFoundryWallet } from "../lib/loadFoundryWallet.js";
+dotenv.config();
 
 // Equivalent of __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables using env-enc
-config();
-
-const consumerAddress = "0xf1f2bD5EB249A813Be0f4628Fa4Fc8B64F330634";
-const subscriptionId = 4929;
+const untilThenV1Address = "0x0A101f9F99f2730655A02522237B11FF768E84fC";
 
 const makeRequestSepolia = async () => {
   const routerAddress = "0xb83E47C2bC239B3bf370bc41e1459A34b41238D0";
-  const linkTokenAddress = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
-  const donId = "fun-ethereum-sepolia-1";
-  const smartContractDonId =
-    "0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000";
   const explorerUrl = "https://sepolia.etherscan.io";
-  const gatewayUrls = [
-    "https://01.functions-gateway.testnet.chain.link/",
-    "https://02.functions-gateway.testnet.chain.link/",
-  ];
 
   const source = readFileSync(
     path.resolve(__dirname, "../src/source.js")
   ).toString();
 
   const args = [
-    "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji",
-    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "CID", // Replace with private CID
+    "address", // Replace with sender
+    "address", // Replace with receiver
   ];
 
   const secrets = {
@@ -45,10 +40,6 @@ const makeRequestSepolia = async () => {
     PINATA_PUBLIC_GROUP_ID: process.env.PINATA_PUBLIC_GROUP_ID,
   };
 
-  const slotIdNumber = 1;
-  const expirationTimeMinutes = 15;
-  const gasLimit = 300000;
-
   const rpcUrl = process.env.SEPOLIA_RPC_URL;
   if (!rpcUrl)
     throw new Error("rpcUrl not provided - check your environment variables");
@@ -57,82 +48,22 @@ const makeRequestSepolia = async () => {
   const wallet = (await loadFoundryWallet()).connect(provider);
   const signer = wallet.connect(provider);
 
-  // console.log("Start simulation...");
-  // const response = await simulateScript({
-  //   source,
-  //   args,
-  //   bytesArgs: [],
-  //   secrets,
-  // });
-
-  // if (response.errorString) {
-  //   console.log("❌ Error during simulation:", response.errorString);
-  // } else {
-  //   const decodedResponse = decodeResult(
-  //     response.responseBytesHexstring,
-  //     ReturnType.string
-  //   );
-  //   console.log("✅ Decoded response:", decodedResponse);
-  // }
-
-  // console.log("\nEstimate request costs...");
-  // const subscriptionManager = new SubscriptionManager({
-  //   signer,
-  //   linkTokenAddress,
-  //   functionsRouterAddress: routerAddress,
-  // });
-  // await subscriptionManager.initialize();
-
-  // const gasPriceWei = await signer.getGasPrice();
-  // const estimatedCostInJuels =
-  //   await subscriptionManager.estimateFunctionsRequestCost({
-  //     donId,
-  //     subscriptionId,
-  //     callbackGasLimit: gasLimit,
-  //     gasPriceWei: BigInt(gasPriceWei.toString()),
-  //   });
-
-  // console.log(
-  //   `Estimated cost: ${ethers.utils.formatEther(estimatedCostInJuels)} LINK`
-  // );
-
-  // console.log("\nUpload requests request...");
-  // const secretsManager = new SecretsManager({
-  //   signer,
-  //   functionsRouterAddress: routerAddress,
-  //   donId,
-  // });
-  // await secretsManager.initialize();
-
-  // const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
-
-  // const uploadResult = await secretsManager.uploadEncryptedSecretsToDON({
-  //   encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
-  //   gatewayUrls,
-  //   slotId: slotIdNumber,
-  //   minutesUntilExpiration: expirationTimeMinutes,
-  // });
-
-  // if (!uploadResult.success) throw new Error("Secrets upload failed");
-
-  // const donHostedSecretsVersion = parseInt(uploadResult.version);
-  // console.log(
-  //   `✅ Secrets uploaded to DON. Version: ${donHostedSecretsVersion}`
-  // );
-
-  const donHostedSecretsVersion = 1749224682; // Use the version from the upload result in a real scenario
-
-  const ipfsFunctionsConsumerAbi = JSON.parse(
-    readFileSync(path.resolve(__dirname, "../abi/IPFSFunctionsConsumer.json"))
+  const untilThenV1Abi = JSON.parse(
+    readFileSync(path.resolve(__dirname, "../abi/UntilThenV1.json"))
   );
 
-  const ipfsFunctionsConsumer = new ethers.Contract(
-    consumerAddress,
-    ipfsFunctionsConsumerAbi,
+  const untilthenV1Contract = new ethers.Contract(
+    untilThenV1Address,
+    untilThenV1Abi,
     signer
   );
   const nftId = 1;
-  const transaction = await ipfsFunctionsConsumer.sendRequest(nftId, args);
+  const transaction = await untilthenV1Contract.sendConsumerRequest(
+    nftId,
+    "address", // Replace with sender address
+    "address", // Replace with receiver address
+    "CID" // Replace with private CID
+  );
 
   console.log(`✅ Request sent! Hash: ${transaction.hash}`);
   console.log(`Explorer URL: ${explorerUrl}/tx/${transaction.hash}`);
@@ -161,7 +92,7 @@ const makeRequestSepolia = async () => {
     if (errorString) {
       console.log("❌ Execution error:", errorString);
     } else {
-      const decoded = decodeResult(responseBytesHexstring, ReturnType.uint256);
+      const decoded = decodeResult(responseBytesHexstring, ReturnType.string);
       console.log("✅ Decoded result:", decoded);
     }
   } catch (e) {

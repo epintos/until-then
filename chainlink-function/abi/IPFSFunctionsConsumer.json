@@ -9,7 +9,22 @@
       },
       { "name": "_router", "type": "address", "internalType": "address" },
       { "name": "_donId", "type": "bytes32", "internalType": "bytes32" },
-      { "name": "_gasLimit", "type": "uint32", "internalType": "uint32" }
+      { "name": "_gasLimit", "type": "uint32", "internalType": "uint32" },
+      {
+        "name": "_donHostedSecretsSlotID",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "_donHostedSecretsVersion",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "_encryptedSecretsUrls",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
     "stateMutability": "nonpayable"
   },
@@ -25,6 +40,41 @@
     "name": "SEND_REQUEST_ROLE",
     "inputs": [],
     "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "donHostedSecretsSlotID",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "donHostedSecretsVersion",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint64", "internalType": "uint64" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "donID",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "encryptedSecretsUrls",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gasLimit",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
     "stateMutability": "view"
   },
   {
@@ -106,6 +156,23 @@
   },
   {
     "type": "function",
+    "name": "requests",
+    "inputs": [
+      { "name": "requestId", "type": "bytes32", "internalType": "bytes32" }
+    ],
+    "outputs": [
+      { "name": "nftId", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "publicContentHash",
+        "type": "string",
+        "internalType": "string"
+      },
+      { "name": "error", "type": "bytes", "internalType": "bytes" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "revokeRole",
     "inputs": [
       { "name": "role", "type": "bytes32", "internalType": "bytes32" },
@@ -141,26 +208,17 @@
   },
   {
     "type": "function",
-    "name": "setupEncryptedSecrets",
-    "inputs": [
-      {
-        "name": "_encryptedSecretsUrls",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "_donHostedSecretsSlotID",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "_donHostedSecretsVersion",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "name": "source",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string", "internalType": "string" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "subscriptionId",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint64", "internalType": "uint64" }],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -181,9 +239,88 @@
     "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "updateEncryptedSecrets",
+    "inputs": [
+      {
+        "name": "_donHostedSecretsSlotID",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "_donHostedSecretsVersion",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "_encryptedSecretsUrls",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateGasLimit",
+    "inputs": [
+      { "name": "_gasLimit", "type": "uint32", "internalType": "uint32" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateSource",
+    "inputs": [
+      { "name": "_source", "type": "string", "internalType": "string" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "event",
     "name": "EncryptedSecretsSet",
     "inputs": [],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ErrorUpdatingHash",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "nftId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "error",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GasLimitUpdated",
+    "inputs": [
+      {
+        "name": "gasLimit",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
     "anonymous": false
   },
   {
@@ -207,12 +344,6 @@
         "type": "string",
         "indexed": false,
         "internalType": "string"
-      },
-      {
-        "name": "err",
-        "type": "bytes",
-        "indexed": false,
-        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -346,6 +477,19 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SourceUdated",
+    "inputs": [
+      {
+        "name": "source",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       }
     ],
     "anonymous": false

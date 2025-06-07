@@ -1,7 +1,6 @@
 const cid = args[0];
 const senderAddress = args[1];
 const receiverAddress = args[2];
-console.log(secrets);
 if (!cid) throw new Error("Missing CID");
 if (!senderAddress) throw new Error("Missing senderAddress");
 if (!receiverAddress) throw new Error("Missing receiverAddress");
@@ -94,7 +93,6 @@ async function deletePrivateFile(privateId) {
     url: `https://api.pinata.cloud/v3/files/private/${privateId}`,
     headers: authHeaders(),
   });
-  console.log(response);
 }
 
 // --- Execution Flow ---
@@ -110,7 +108,11 @@ try {
   // await sleep(2500);
   // await deletePrivateFile(privateInfo.id);
 } catch (error) {
-  console.log("Error occurred:", error);
+  throw new Error("Error ocurred: " + error.message);
+}
+
+if (!newCid || typeof newCid !== "string") {
+  throw new Error("Failed to process the CID or get a new CID");
 }
 
 return Functions.encodeString(newCid);
