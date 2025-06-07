@@ -26,7 +26,7 @@ contract GiftNFTTest is Test {
         Deploy deployer = new Deploy();
         HelperConfig helperConfig;
         (untilThenV1, giftNFT, helperConfig) = deployer.run();
-        (,,,,, contentGiftFee, currencyGiftFee,) = helperConfig.activeNetworkConfig();
+        (,,,,, contentGiftFee, currencyGiftFee,,) = helperConfig.activeNetworkConfig();
         consumer = IPFSFunctionsConsumerMock(address(untilThenV1.getIPFSConsumer()));
 
         vm.prank(address(deployer));

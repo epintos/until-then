@@ -14,7 +14,7 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
     bytes32 public constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
     bytes32 public constant UPDATE_CONTENT_ROLE = keccak256("UPDATE_CONTENT_ROLE");
 
-    uint256 internal totalSupply;
+    uint256 public totalSupply;
     mapping(uint256 tokenId => Metadata metadata) private tokenMetadata;
 
     struct Metadata {

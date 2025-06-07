@@ -4,13 +4,16 @@ pragma solidity ^0.8.30;
 import { FunctionsClient } from "@chainlink/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { FunctionsRequest } from "@chainlink/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { GiftNFT } from "src/GiftNFT.sol";
 
-contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
+contract IPFSFunctionsConsumer is FunctionsClient, Ownable, AccessControl, ReentrancyGuard {
     using FunctionsRequest for FunctionsRequest.Request;
 
     error IPFSFunctionsConsumer__UnexpectedRequestID(bytes32 requestId);
+    error IPFSFunctionsConsumer__GiftNFTContractCannotBeZero();
 
     struct FunctionRequest {
         uint256 nftId;
@@ -18,75 +21,81 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
         bytes error;
     }
 
-    event GiftContentHashUpdated(bytes32 indexed requestId, string publicContentHash, bytes err);
+    bytes32 public constant SEND_REQUEST_ROLE = keccak256("SEND_REQUEST_ROLE");
 
-    string source = "const cid = args[0];" "const senderAddress = args[1];" "const receiverAddress = args[2];"
-        "if (!cid) throw new Error(\"Missing CID\");" "if (!senderAddress) throw new Error(\"Missing senderAddress\");"
-        "if (!receiverAddress) throw new Error(\"Missing receiverAddress\");" "" "function sleep(ms) {"
-        "  return new Promise((resolve) => setTimeout(resolve, ms));" "}" "" "function validateSecrets(requiredKeys) {"
-        "  for (const key of requiredKeys) {" "    if (!secrets[key]) {"
-        "      throw new Error(`Missing required secret: ${key}`);" "    }" "  }" "}" "" "validateSecrets(["
-        "  \"PINATA_API_JWT\"," "  \"PINATA_GATEWAY\"," "  \"PINATA_PRIVATE_GROUP_ID\"," "  \"PINATA_PUBLIC_GROUP_ID\","
-        "]);" "" "const authHeaders = () => ({" "  Authorization: `Bearer ${secrets.PINATA_API_JWT}`,"
-        "  \"Content-Type\": \"application/json\"," "});" "" "async function getDownloadLink(cid) {"
-        "  const url = `${secrets.PINATA_GATEWAY}/files/${cid}`;" "  const response = await Functions.makeHttpRequest({"
-        "    method: \"POST\"," "    url: \"https://api.pinata.cloud/v3/files/private/download_link\","
-        "    headers: authHeaders()," "    data: {" "      url," "      expires: 180,"
-        "      date: Math.floor(Date.now() / 1000)," "      method: \"GET\"," "    }," "  });"
-        "  return response.data.data;" "}" "" "async function fetchPrivateContent(downloadUrl) {"
-        "  const response = await Functions.makeHttpRequest({" "    method: \"GET\"," "    url: downloadUrl," "  });"
-        "  return response.data;" "}" "" "async function getPrivateFileInfo(cid) {"
-        "  const response = await Functions.makeHttpRequest({" "    method: \"GET\","
-        "    url: `https://api.pinata.cloud/v3/files/private?group=${secrets.PINATA_PRIVATE_GROUP_ID}&cid=${cid}`,"
-        "    headers: authHeaders()," "  });" "  return response.data.data.files[0];" "}" ""
-        "async function pinPublicVersion(content, privateInfo) {" "  const metadata = {"
-        "    name: `${privateInfo.name.replace(/\\.json$/i, \"\")}-public.json`,"
-        "    keyvalues: { privateCid: privateInfo.cid, senderAddress, receiverAddress }," "  };"
-        "  const response = await Functions.makeHttpRequest({" "    method: \"POST\","
-        "    url: \"https://api.pinata.cloud/pinning/pinJSONToIPFS\"," "    headers: authHeaders()," "    data: {"
-        "      pinataContent: content," "      pinataMetadata: metadata," "    }," "  });" "  return response.data;" "}"
-        "" "async function assignToPublicGroup(newId) {" "  await Functions.makeHttpRequest({" "    method: \"PUT\","
-        "    url: `https://api.pinata.cloud/v3/groups/public/${secrets.PINATA_PUBLIC_GROUP_ID}/ids/${newId}`,"
-        "    headers: authHeaders()," "  });" "}" "" "async function deletePrivateFile(privateId) {"
-        "  const response = await Functions.makeHttpRequest({" "    method: \"DELETE\","
-        "    url: `https://api.pinata.cloud/v3/files/private/${privateId}`," "    headers: authHeaders()," "  });"
-        "  console.log(response);" "}" "" "// --- Execution Flow ---" "let newCid;" "try {"
-        "  const downloadUrl = await getDownloadLink(cid);"
-        "  const privateContent = await fetchPrivateContent(downloadUrl);"
-        "  const privateInfo = await getPrivateFileInfo(cid);"
-        "  const publicData = await pinPublicVersion(privateContent, privateInfo);" "  newCid = publicData.IpfsHash;" ""
-        "  await assignToPublicGroup(publicData.ID);" "  // await sleep(2500);"
-        "  // await deletePrivateFile(privateInfo.id);" "} catch (error) {" "  console.log(\"Error occurred:\", error);"
-        "}" "" "return Functions.encodeString(newCid);" "";
+    event GiftContentHashUpdated(bytes32 indexed requestId, uint256 indexed nftId, string publicContentHash);
+    event GiftNFTContractSet(address giftNFTContract);
+    event EncryptedSecretsSet();
+    event GasLimitUpdated(uint32 gasLimit);
+    event ErrorUpdatingHash(bytes32 indexed requestId, uint256 indexed nftId, bytes error);
+    event SourceUdated(string source);
 
-    address internal immutable router;
-    uint32 internal gasLimit;
-    bytes32 internal immutable donID;
-    uint64 internal subscriptionId;
+    uint32 public gasLimit;
+    bytes32 public immutable donID;
+    uint64 public subscriptionId;
+    bytes public encryptedSecretsUrls;
+    string public source;
 
     GiftNFT internal giftNFTContract;
-    mapping(bytes32 requestId => FunctionRequest request) internal requests;
+    mapping(bytes32 requestId => FunctionRequest request) public requests;
 
     constructor(
-        address _giftNFTContract,
         uint64 _subscriptionId,
         address _router,
         bytes32 _donId,
-        uint32 _gasLimit
+        uint32 _gasLimit,
+        bytes memory _encryptedSecretsUrls
     )
-        FunctionsClient(router)
+        FunctionsClient(_router)
         Ownable(msg.sender)
     {
         subscriptionId = _subscriptionId;
-        giftNFTContract = GiftNFT(_giftNFTContract);
-        router = _router;
         donID = _donId;
         gasLimit = _gasLimit;
+        encryptedSecretsUrls = _encryptedSecretsUrls;
     }
 
-    function sendRequest(uint256 nftId, string[] calldata args) external onlyOwner returns (bytes32 requestId) {
+    function updateSource(string calldata _source) external onlyOwner {
+        source = _source;
+        emit SourceUdated(_source);
+    }
+
+    function updateGasLimit(uint32 _gasLimit) external onlyOwner {
+        gasLimit = _gasLimit;
+        emit GasLimitUpdated(_gasLimit);
+    }
+
+    function grantSendRequestRole(address account) external onlyOwner {
+        _grantRole(SEND_REQUEST_ROLE, account);
+    }
+
+    function setGiftNFTContract(address _giftNFTContract) external onlyOwner {
+        if (_giftNFTContract == address(0)) {
+            revert IPFSFunctionsConsumer__GiftNFTContractCannotBeZero();
+        }
+        giftNFTContract = GiftNFT(_giftNFTContract);
+        emit GiftNFTContractSet(_giftNFTContract);
+    }
+
+    function updateEncryptedSecrets(bytes calldata _encryptedSecretsUrls) external onlyOwner {
+        encryptedSecretsUrls = _encryptedSecretsUrls;
+        emit EncryptedSecretsSet();
+    }
+
+    function sendRequest(
+        uint256 nftId,
+        string[] calldata args
+    )
+        external
+        onlyRole(SEND_REQUEST_ROLE)
+        nonReentrant
+        returns (bytes32 requestId)
+    {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(source);
+        if (encryptedSecretsUrls.length > 0) {
+            req.addSecretsReference(encryptedSecretsUrls);
+        }
         if (args.length > 0) req.setArgs(args);
 
         requestId = _sendRequest(req.encodeCBOR(), subscriptionId, gasLimit, donID);
@@ -96,15 +105,18 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable {
 
     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
         FunctionRequest storage request = requests[requestId];
-        if (request.nftId == 0) {
+        uint256 nftId = request.nftId;
+        if (nftId == 0) {
             revert IPFSFunctionsConsumer__UnexpectedRequestID(requestId);
         }
         if (err.length > 0) {
             request.error = err;
-        }
-        request.publicContentHash = string(response);
-        giftNFTContract.updateContentHash(request.nftId, string(response));
+            emit ErrorUpdatingHash(requestId, nftId, err);
+        } else {
+            request.publicContentHash = string(response);
+            giftNFTContract.updateContentHash(nftId, string(response));
 
-        emit GiftContentHashUpdated(requestId, string(response), err);
+            emit GiftContentHashUpdated(requestId, nftId, string(response));
+        }
     }
 }

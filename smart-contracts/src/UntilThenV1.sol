@@ -22,6 +22,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     error UntilThenV1__GiftHasBeenClaimedAlready();
     error UntilThenV1__NotAuthorizedToClaimGift();
     error UntilThenV1__GiftCannotBeClaimedYet();
+    error UntilThenV1__CannotBeZeroAddress();
 
     /// TYPES
     enum GiftStatus {
@@ -91,6 +92,13 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         contentGiftFee = _contentGiftFee;
         currencyGiftFee = _currencyGiftFee;
         giftNFTContract = GiftNFT(_giftNFTContract);
+        ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
+    }
+
+    function updateIPFSFunctionsConsumer(address _ipfsFunctionsConsumer) external onlyOwner {
+        if (_ipfsFunctionsConsumer == address(0)) {
+            revert UntilThenV1__CannotBeZeroAddress();
+        }
         ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
     }
 
@@ -187,6 +195,22 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
 
         emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId, requestId);
         return nftId;
+    }
+
+    function sendConsumerRequest(
+        uint256 nftId,
+        address sender,
+        address receiver,
+        string calldata contentHash
+    )
+        external
+        onlyOwner
+    {
+        string[] memory args = new string[](3);
+        args[0] = string(contentHash);
+        args[1] = Strings.toHexString(uint160(sender), 20);
+        args[2] = Strings.toHexString(uint160(receiver), 20);
+        ipfsFunctionsConsumer.sendRequest(nftId, args);
     }
 
     function withdrawBalance() external onlyOwner {
