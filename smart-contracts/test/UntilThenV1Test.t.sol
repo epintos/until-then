@@ -111,12 +111,6 @@ contract UntilThenV1Test is Test {
             address(0), releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
         );
 
-        vm.warp(block.timestamp + 10 days);
-        vm.expectRevert(UntilThenV1.UntilThenV1__ReleaseTimestampCannotBeInThePast.selector);
-        untilThenV1.createGift{ value: currencyGiftFee }(
-            USER_RECEIVER, block.timestamp - 1 days, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND
-        );
-
         vm.expectRevert(UntilThenV1.UntilThenV1__InvalidGiftFee.selector);
         untilThenV1.createGift{ value: 0 }(
             USER_RECEIVER, releaseTimestamp, hex"", UntilThenV1.AvailableYieldStrategies.COMPOUND

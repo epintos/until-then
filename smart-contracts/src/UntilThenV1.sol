@@ -15,7 +15,6 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     /// ERRORS
     error UntilThenV1__ReceiverCannotBeZeroAddress();
     error UntilThenV1__InvalidGiftFee();
-    error UntilThenV1__ReleaseTimestampCannotBeInThePast();
     error UntilThenV1__TransferFailed();
     error UntilThenV1__InvalidYieldStrategy();
     error UntilThenV1__GiftDoesNotExist();
@@ -116,9 +115,6 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         if (receiver == address(0)) {
             revert UntilThenV1__ReceiverCannotBeZeroAddress();
         }
-        if (releaseTimestamp < block.timestamp) {
-            revert UntilThenV1__ReleaseTimestampCannotBeInThePast();
-        }
 
         if (msg.value == 0) {
             revert UntilThenV1__InvalidGiftFee();
@@ -186,12 +182,14 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
                 revert UntilThenV1__TransferFailed();
             }
         }
-
-        string[] memory args = new string[](3);
-        args[0] = string(gift.contentHash);
-        args[1] = Strings.toHexString(uint160(gift.sender), 20);
-        args[2] = Strings.toHexString(uint160(gift.receiver), 20);
-        bytes32 requestId = ipfsFunctionsConsumer.sendRequest(nftId, args);
+        bytes32 requestId;
+        if (bytes(gift.contentHash).length > 0) {
+            string[] memory args = new string[](3);
+            args[0] = string(gift.contentHash);
+            args[1] = Strings.toHexString(uint160(gift.sender), 20);
+            args[2] = Strings.toHexString(uint160(gift.receiver), 20);
+            ipfsFunctionsConsumer.sendRequest(nftId, args);
+        }
 
         emit GiftClaimed(msg.sender, giftId, giftAmountToClaim, nftId, requestId);
         return nftId;
