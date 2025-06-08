@@ -59,4 +59,34 @@ contract GiftNFTTest is Test {
         GiftNFT.Metadata memory metadata = giftNFT.getMetadata(tokenId);
         assertEq(metadata.contentHash, CONTENT_PUBLIC_HASH);
     }
+    // tokenURI
+
+    function test_tokenURI() public {
+        vm.prank(address(untilThenV1));
+        uint256 tokenId = giftNFT.mint(USER, GIFT_ID);
+
+        vm.prank(address(consumer));
+        giftNFT.updateContentHash(tokenId, CONTENT_PUBLIC_HASH);
+
+        string memory expectedURI = string(
+            abi.encodePacked(
+                '{"name":"',
+                giftNFT.uriName(),
+                '", "description":"',
+                giftNFT.uriDescription(),
+                '", "image":"',
+                giftNFT.uriImageUrl(),
+                '", "attributes":[',
+                '{"trait_type":"giftId","value":"',
+                GIFT_ID,
+                '"},',
+                '{"trait_type":"contentHash","value":"',
+                CONTENT_PUBLIC_HASH,
+                '"}',
+                "]}"
+            )
+        );
+
+        assertEq(giftNFT.tokenURI(tokenId), expectedURI);
+    }
 }

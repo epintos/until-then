@@ -11,20 +11,39 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
     error GiftNFT__ReceiverCannotBeZeroAddress();
     error GiftNFT__InvalidGiftId();
 
-    bytes32 public constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
-    bytes32 public constant UPDATE_CONTENT_ROLE = keccak256("UPDATE_CONTENT_ROLE");
-
-    uint256 public totalSupply;
-    mapping(uint256 tokenId => Metadata metadata) private tokenMetadata;
-
     struct Metadata {
         uint256 giftId;
         string contentHash;
     }
 
+    bytes32 public constant MINT_AND_BURN_ROLE = keccak256("MINT_AND_BURN_ROLE");
+    bytes32 public constant UPDATE_CONTENT_ROLE = keccak256("UPDATE_CONTENT_ROLE");
+
+    uint256 public totalSupply;
+    string public uriImageUrl = "ipfs://bafybeidzsag473kzccyzycydv3h5yrdflphsfl3ojlckur4pzvpupij3p4";
+    string public uriName = "UntilThen Gift";
+    string public uriDescription = "A gift from the past";
+
+    mapping(uint256 tokenId => Metadata metadata) private tokenMetadata;
+
     event ContentHashUpdated(uint256 indexed tokenId, string publicContentHash);
+    event DataUpdated(string newUriName, string newUriDescription, string newUriImageUrl);
 
     constructor() Ownable(msg.sender) ERC721("UntilThenGift", "UNTIL") { }
+
+    function updateNFTData(
+        string calldata newUriName,
+        string calldata newUriDescription,
+        string calldata newUriImageUrl
+    )
+        external
+        onlyOwner
+    {
+        uriName = newUriName;
+        uriDescription = newUriDescription;
+        uriImageUrl = newUriImageUrl;
+        emit DataUpdated(newUriName, newUriDescription, newUriImageUrl);
+    }
 
     function grantMintAndBurnRole(address account) external onlyOwner {
         _grantRole(MINT_AND_BURN_ROLE, account);
@@ -66,5 +85,28 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
     function getMetadata(uint256 tokenId) external view returns (Metadata memory) {
         _ownerOf(tokenId);
         return tokenMetadata[tokenId];
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _ownerOf(tokenId);
+        Metadata memory metadata = tokenMetadata[tokenId];
+        return string(
+            abi.encodePacked(
+                '{"name":"',
+                uriName,
+                '", "description":"',
+                uriDescription,
+                '", "image":"',
+                uriImageUrl,
+                '", "attributes":[',
+                '{"trait_type":"giftId","value":"',
+                metadata.giftId,
+                '"},',
+                '{"trait_type":"contentHash","value":"',
+                metadata.contentHash,
+                '"}',
+                "]}"
+            )
+        );
     }
 }
