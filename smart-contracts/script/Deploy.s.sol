@@ -9,20 +9,44 @@ import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
 import { HelperConfig } from "script/HelperConfig.s.sol";
+import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
 
 contract Deploy is Script {
-    function run() external returns (UntilThenV1, GiftNFT, HelperConfig) {
+    function run() external returns (UntilThenV1, GiftNFT, HelperConfig, AaveYieldManager) {
         HelperConfig helperConfig = new HelperConfig();
-        (,,,, address account, uint256 contentGiftFee, uint256 currencyGiftFee, address consumerAddress,) =
-            helperConfig.activeNetworkConfig();
+        (
+            HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig,
+            address account,
+            uint256 contentGiftFee,
+            uint256 currencyGiftFee,
+            uint256 currencyGiftLinkFee,
+            HelperConfig.AaveYieldConfig memory aaveYieldConfig
+        ) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         GiftNFT giftNFT = new GiftNFT();
+        address consumerAddress = chainlinkFunctionsConfig.consumerAddress;
         if (consumerAddress == address(0)) {
             consumerAddress = new DeployFunctionConsumer().run();
         }
 
-        UntilThenV1 untilThenV1 = new UntilThenV1(contentGiftFee, currencyGiftFee, address(giftNFT), consumerAddress);
+        AaveYieldManager aaveYieldManager = new AaveYieldManager(
+            aaveYieldConfig.wethGatewayAddress,
+            aaveYieldConfig.poolAddress,
+            aaveYieldConfig.wethATokenAddress,
+            aaveYieldConfig.linkAddress,
+            aaveYieldConfig.linkATokenAddress
+        );
+        UntilThenV1 untilThenV1 = new UntilThenV1(
+            contentGiftFee,
+            currencyGiftFee,
+            currencyGiftLinkFee,
+            address(giftNFT),
+            consumerAddress,
+            address(aaveYieldManager),
+            aaveYieldConfig.linkAddress
+        );
+        aaveYieldManager.grantDepositWithdrawRole(address(untilThenV1));
         giftNFT.grantMintAndBurnRole(address(untilThenV1));
         giftNFT.grantUpdateContentRole(consumerAddress);
         giftNFT.transferOwnership(address(untilThenV1));
@@ -30,35 +54,26 @@ contract Deploy is Script {
         IPFSFunctionsConsumer(consumerAddress).grantSendRequestRole(address(untilThenV1));
         vm.stopBroadcast();
 
-        return (untilThenV1, giftNFT, helperConfig);
+        return (untilThenV1, giftNFT, helperConfig, aaveYieldManager);
     }
 }
 
 contract DeployFunctionConsumer is Script {
     function run() external returns (address) {
         HelperConfig helperConfig = new HelperConfig();
-        (
-            address chainlinkFunctionRouter,
-            bytes32 chainlinkFunctionDonId,
-            uint64 chainlinkFunctionSubscriptionId,
-            uint32 chainlinkFunctionGasLimit,
-            address account,
-            ,
-            ,
-            ,
-            bytes memory encryptedSecretsUrls
-        ) = helperConfig.activeNetworkConfig();
-        string memory source = vm.readFile("../../chainlink-function/src/source.js");
+        (HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig, address account,,,,) =
+            helperConfig.activeNetworkConfig();
+        // string memory source = vm.readFile("../../chainlink-function/src/source.js");
 
         vm.startBroadcast(account);
         IPFSFunctionsConsumer consumerContract = new IPFSFunctionsConsumer(
-            chainlinkFunctionSubscriptionId,
-            chainlinkFunctionRouter,
-            chainlinkFunctionDonId,
-            chainlinkFunctionGasLimit,
-            encryptedSecretsUrls
+            chainlinkFunctionsConfig.subscriptionId,
+            chainlinkFunctionsConfig.router,
+            chainlinkFunctionsConfig.donId,
+            chainlinkFunctionsConfig.gasLimit,
+            chainlinkFunctionsConfig.encryptedSecretsUrls
         );
-        consumerContract.updateSource(source);
+        // consumerContract.updateSource(source);
         vm.stopBroadcast();
         return address(consumerContract);
     }

@@ -14,18 +14,33 @@ import { IPFSFunctionsConsumerMock } from "test/mocks/IPFSFunctionsConsumerMock.
 contract HelperConfig is Script {
     error HelperConfig__InvalidChainId();
 
+    struct ChainlinkFunctionsConfig {
+        address router;
+        bytes32 donId;
+        uint64 subscriptionId;
+        uint32 gasLimit;
+        bytes encryptedSecretsUrls;
+        address consumerAddress;
+    }
+
+    struct AaveYieldConfig {
+        address poolAddress;
+        address wethGatewayAddress;
+        address wethATokenAddress;
+        address linkAddress;
+        address linkATokenAddress;
+    }
+
     struct NetworkConfig {
-        address chainlinkFunctionRouter;
-        bytes32 chainlinkFunctionDonId;
-        uint64 chainlinkFunctionSubscriptionId;
-        uint32 chainlinkFunctionGasLimit;
+        ChainlinkFunctionsConfig chainlinkFunctionsConfig;
         address account;
         uint256 contentGiftFee;
         uint256 currencyGiftFee;
-        address consumerAddress;
-        bytes encryptedSecretsUrls;
+        uint256 currencyGiftLinkFee;
+        AaveYieldConfig aaveYieldConfig;
     }
 
+    // Chainlink Functions
     address internal constant SEPOLIA_CHAINLINK_FUNCTION_ROUTER = 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0;
     bytes32 internal constant SEPOLIA_CHAINLINK_DON_ID =
         0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000;
@@ -35,10 +50,18 @@ contract HelperConfig is Script {
     bytes internal constant ENCRYPTED_SECRETS_URLS =
         hex"743f6fc1b42c834c4271091a7003826803347280efc67b4e1c213e1120b87cf69cdf14ad4edc8e7a53eb973ce38b10b07b70c49e664c75e3f16343344525aa081bc015cd19eb886692ab3d7825de5691a0abd11f556684120167d7ef295ecc693d30633593af35abef8311ea5bc69a1c99793283d3f7bf8f6f3c1ff0bd06985b80faae47ddb1f8ffda3d79b680f268fa65574d26633effda792e0c86cb1a4323cd";
 
+    // https://aave.com/docs/resources/addresses
+    address internal constant SEPOLIA_AAVE_POOL_ADDRESS = 0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951;
+    address internal constant SEPOLIA_AAVE_WETH_GATEWAY_ADDRESS = 0x387d311e47e80b498169e6fb51d3193167d89F7D;
+    address internal constant SEPOLIA_AAVE_WETH_ATOKEN_ADDRESS = 0x5b071b590a59395fE4025A0Ccc1FcC931AAc1830;
+    address internal constant SEPOLIA_AAVE_LINK_ADDRESS = 0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5;
+    address internal constant SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS = 0x3FfAf50D4F4E96eB78f2407c090b72e86eCaed24;
+
     uint256 internal constant SEPOLIA_CHAIN_ID = 11_155_111;
     uint256 internal constant ANVIL_CHAIN_ID = 31_337;
     uint256 internal CONTENT_GIFT_FEE = 0.01 ether;
     uint256 internal CURRENCY_GIFT_FEE = 0.0001 ether;
+    uint256 internal CURRENCY_GIFT_LINK_FEE = 0.05 ether;
 
     NetworkConfig public activeNetworkConfig;
 
@@ -54,20 +77,30 @@ contract HelperConfig is Script {
 
     function _getSepoliaETHConfig() internal view returns (NetworkConfig memory) {
         return NetworkConfig({
-            chainlinkFunctionRouter: SEPOLIA_CHAINLINK_FUNCTION_ROUTER,
-            chainlinkFunctionDonId: SEPOLIA_CHAINLINK_DON_ID,
-            chainlinkFunctionSubscriptionId: SEPOLIA_CHAINLINK_FUNCTION_SUBSCRIPTION_ID,
-            chainlinkFunctionGasLimit: CHAINLINK_FUNCTION_GAS_LIMIT,
+            chainlinkFunctionsConfig: ChainlinkFunctionsConfig({
+                router: SEPOLIA_CHAINLINK_FUNCTION_ROUTER,
+                donId: SEPOLIA_CHAINLINK_DON_ID,
+                subscriptionId: SEPOLIA_CHAINLINK_FUNCTION_SUBSCRIPTION_ID,
+                gasLimit: CHAINLINK_FUNCTION_GAS_LIMIT,
+                encryptedSecretsUrls: ENCRYPTED_SECRETS_URLS,
+                consumerAddress: SEPOLIA_CONSUMER_ADDRESS
+            }),
             account: vm.envAddress("SEPOLIA_ACCOUNT_ADDRESS"),
             contentGiftFee: CONTENT_GIFT_FEE,
             currencyGiftFee: CURRENCY_GIFT_FEE,
-            consumerAddress: SEPOLIA_CONSUMER_ADDRESS,
-            encryptedSecretsUrls: ENCRYPTED_SECRETS_URLS
+            currencyGiftLinkFee: CURRENCY_GIFT_LINK_FEE,
+            aaveYieldConfig: AaveYieldConfig({
+                poolAddress: SEPOLIA_AAVE_POOL_ADDRESS,
+                wethGatewayAddress: SEPOLIA_AAVE_WETH_GATEWAY_ADDRESS,
+                wethATokenAddress: SEPOLIA_AAVE_WETH_ATOKEN_ADDRESS,
+                linkAddress: SEPOLIA_AAVE_LINK_ADDRESS,
+                linkATokenAddress: SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS
+            })
         });
     }
 
     function _getOrCreateAnvilETHConfig() internal returns (NetworkConfig memory) {
-        if (activeNetworkConfig.chainlinkFunctionRouter != address(0)) {
+        if (activeNetworkConfig.chainlinkFunctionsConfig.router != address(0)) {
             return activeNetworkConfig;
         }
 
@@ -76,15 +109,25 @@ contract HelperConfig is Script {
         vm.stopBroadcast();
 
         return NetworkConfig({
-            chainlinkFunctionRouter: address(0),
-            chainlinkFunctionDonId: 0,
-            chainlinkFunctionSubscriptionId: 0,
-            chainlinkFunctionGasLimit: CHAINLINK_FUNCTION_GAS_LIMIT,
+            chainlinkFunctionsConfig: ChainlinkFunctionsConfig({
+                router: address(consumerContract),
+                donId: 0,
+                subscriptionId: 0,
+                gasLimit: CHAINLINK_FUNCTION_GAS_LIMIT,
+                encryptedSecretsUrls: ENCRYPTED_SECRETS_URLS,
+                consumerAddress: address(consumerContract)
+            }),
             account: msg.sender,
             contentGiftFee: CONTENT_GIFT_FEE,
             currencyGiftFee: CURRENCY_GIFT_FEE,
-            consumerAddress: address(consumerContract),
-            encryptedSecretsUrls: ""
+            currencyGiftLinkFee: CURRENCY_GIFT_LINK_FEE,
+            aaveYieldConfig: AaveYieldConfig({
+                poolAddress: address(0),
+                wethGatewayAddress: address(0),
+                wethATokenAddress: address(0),
+                linkAddress: address(0),
+                linkATokenAddress: address(0)
+            })
         });
     }
 }

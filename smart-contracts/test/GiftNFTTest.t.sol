@@ -14,8 +14,6 @@ contract GiftNFTTest is Test {
     GiftNFT internal giftNFT;
     address internal OWNER = makeAddr("OWNER");
     address internal USER = makeAddr("USER");
-    uint256 internal contentGiftFee;
-    uint256 internal currencyGiftFee;
     string constant CONTENT_PUBLIC_HASH = "PUBLIC_QmcYQrkV9zjYW3jopExb4Qufkm8t94EtSHcUqdLXymEwPP";
     uint256 constant GIFT_ID = 1;
     IPFSFunctionsConsumerMock consumer;
@@ -25,11 +23,11 @@ contract GiftNFTTest is Test {
     function setUp() public {
         Deploy deployer = new Deploy();
         HelperConfig helperConfig;
-        (untilThenV1, giftNFT, helperConfig) = deployer.run();
-        (,,,,, contentGiftFee, currencyGiftFee,,) = helperConfig.activeNetworkConfig();
+        (untilThenV1, giftNFT, helperConfig,) = deployer.run();
+        (, address account,,,,) = helperConfig.activeNetworkConfig();
         consumer = IPFSFunctionsConsumerMock(address(untilThenV1.getIPFSConsumer()));
 
-        vm.prank(address(deployer));
+        vm.prank(address(account));
         untilThenV1.transferOwnership(OWNER);
         vm.stopPrank();
     }
