@@ -22,7 +22,7 @@ contract CreateGift is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
@@ -38,7 +38,7 @@ contract CreateEmptyGift is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.001 ether }(account, block.timestamp + 1 minutes, hex"", false, 0);
@@ -52,7 +52,7 @@ contract CreateGiftWithETHYield is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
@@ -68,7 +68,7 @@ contract CreateGiftWithLinkYield is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,) =
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -87,7 +87,7 @@ contract ClaimGift is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.claimGift(UNTIL_THEN_V1_CONTRACT.getTotalGifts());
@@ -98,7 +98,7 @@ contract ClaimGift is Script {
 contract Airdrop is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
             helperConfig.activeNetworkConfig();
         vm.startBroadcast(account);
         bytes32[] memory topics = new bytes32[](2);

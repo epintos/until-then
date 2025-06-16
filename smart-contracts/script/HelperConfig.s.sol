@@ -40,6 +40,7 @@ contract HelperConfig is Script {
         uint256 currencyGiftLinkFee;
         AaveYieldConfig aaveYieldConfig;
         AvalancheAirdropConfig avalancheAirdropConfig;
+        GiveawayConfig giveawayConfig;
     }
 
     struct AvalancheAirdropConfig {
@@ -50,6 +51,14 @@ contract HelperConfig is Script {
         uint64 ccipAvalancheChainSelector;
         uint64 ccipSourceChainSelector;
         address ccipRouterAddress;
+    }
+
+    struct GiveawayConfig {
+        address vrfCoordinator;
+        bytes32 gasLane;
+        uint256 subscriptionId;
+        uint32 callbackGasLimit;
+        address priceFeed;
     }
 
     // Chainlink Functions
@@ -79,7 +88,7 @@ contract HelperConfig is Script {
 
     // Avalance airdrop
     address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0xE51d324a01FB0738002928a9a9f19d96C4250c47;
-    address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = 0xF3F189f0AE673eAE02757e7E0784f7fF8d8629e2;
+    address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = address(0);
     address internal constant AVALANCHE_ERC2O_TOKEN_ADDRESS = 0x3164d84A42ec935f620d73a2e22C8b3E2Cb049aE;
     // https://docs.chain.link/resources/link-token-contracts#ethereum-testnet-sepolia
     address internal constant CCIP_SEPOLIA_LINK_ADDRESS = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
@@ -89,6 +98,14 @@ contract HelperConfig is Script {
     uint64 internal constant CCIP_SEPOLIA_CHAIN_SELECTOR = 16_015_286_601_757_825_753;
     // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
     address internal constant CCIP_SEPOLIA_ROUTER_ADDRESS = 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59;
+
+    // Giveaway
+
+    address internal constant SEPOLIA_VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
+    bytes32 internal constant SEPOLIA_GAS_LANE = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    uint32 internal constant VRF_CALLBACK_GAS_LIMIT = 500_000;
+    uint256 internal constant VRF_SUBSCRIPTION_ID = 0;
+    address internal constant ETH_USD_PRICE_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
     NetworkConfig public activeNetworkConfig;
 
@@ -134,6 +151,13 @@ contract HelperConfig is Script {
                 ccipAvalancheChainSelector: CCIP_AVALANCHE_FUJI_TESTNET_CHAIN_SELECTOR,
                 ccipSourceChainSelector: CCIP_SEPOLIA_CHAIN_SELECTOR,
                 ccipRouterAddress: CCIP_SEPOLIA_ROUTER_ADDRESS
+            }),
+            giveawayConfig: GiveawayConfig({
+                vrfCoordinator: SEPOLIA_VRF_COORDINATOR,
+                gasLane: SEPOLIA_GAS_LANE,
+                subscriptionId: VRF_SUBSCRIPTION_ID,
+                callbackGasLimit: VRF_CALLBACK_GAS_LIMIT,
+                priceFeed: ETH_USD_PRICE_FEED
             })
         });
     }
@@ -176,6 +200,13 @@ contract HelperConfig is Script {
                 ccipAvalancheChainSelector: 0,
                 ccipSourceChainSelector: 0,
                 ccipRouterAddress: address(0)
+            }),
+            giveawayConfig: GiveawayConfig({
+                vrfCoordinator: address(0),
+                gasLane: hex"",
+                subscriptionId: 0,
+                callbackGasLimit: 100,
+                priceFeed: address(0)
             })
         });
     }

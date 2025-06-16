@@ -12,6 +12,7 @@ import { HelperConfig } from "script/HelperConfig.s.sol";
 import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
 
 import { RedeemAirdropAutomation } from "src/avalanche-airdrop/RedeemAirdropAutomation.sol";
+import { Giveaway } from "src/Giveaway.sol";
 
 contract Deploy is Script {
     function run() external returns (UntilThenV1, GiftNFT, HelperConfig, AaveYieldManager) {
@@ -23,6 +24,7 @@ contract Deploy is Script {
             uint256 currencyGiftFee,
             uint256 currencyGiftLinkFee,
             HelperConfig.AaveYieldConfig memory aaveYieldConfig,
+            ,
         ) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -60,7 +62,7 @@ contract Deploy is Script {
 contract DeployFunctionConsumer is Script {
     function run() external returns (address) {
         HelperConfig helperConfig = new HelperConfig();
-        (HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig, address account,,,,,) =
+        (HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig, address account,,,,,,) =
             helperConfig.activeNetworkConfig();
         // string memory source = vm.readFile("../../chainlink-function/src/source.js");
 
@@ -81,7 +83,7 @@ contract DeployFunctionConsumer is Script {
 contract DeployAaveYieldManager is Script {
     function run() external returns (AaveYieldManager) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,) =
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -101,7 +103,7 @@ contract DeployAaveYieldManager is Script {
 contract DeployAirdropAutomation is Script {
     function run() external returns (RedeemAirdropAutomation sender) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -116,6 +118,24 @@ contract DeployAirdropAutomation is Script {
         } else {
             sender = RedeemAirdropAutomation(avalancheAirdropConfig.ccipSender);
         }
+
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployGiveaway is Script {
+    function run() external returns (Giveaway giveaway) {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,,,, HelperConfig.GiveawayConfig memory giveawayConfig) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(account);
+        giveaway = new Giveaway(
+            giveawayConfig.vrfCoordinator,
+            giveawayConfig.gasLane,
+            giveawayConfig.subscriptionId,
+            giveawayConfig.callbackGasLimit,
+            giveawayConfig.priceFeed
+        );
 
         vm.stopBroadcast();
     }

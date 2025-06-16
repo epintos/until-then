@@ -48,6 +48,7 @@ contract UntilThenV1Test is Test {
             uint256 _currencyGiftFee,
             uint256 _currencyGiftLinkFee,
             HelperConfig.AaveYieldConfig memory aaveYieldConfig,
+            ,
         ) = helperConfig.activeNetworkConfig();
         contentGiftFee = _contentGiftFee;
         currencyGiftFee = _currencyGiftFee;

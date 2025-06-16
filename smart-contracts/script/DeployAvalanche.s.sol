@@ -11,7 +11,7 @@ import { Receiver } from "src/avalanche-airdrop/Receiver.sol";
 contract Deploy is Script {
     function run() external returns (Receiver receiver, UntilThenERC20 token) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -35,7 +35,7 @@ contract Deploy is Script {
 contract SetSender is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);

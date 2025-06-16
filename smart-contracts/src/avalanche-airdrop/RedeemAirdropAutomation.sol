@@ -21,7 +21,7 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
     address public immutable i_linkToken;
     uint256 public s_redeemed;
     uint256 public s_airdropLimit = 100;
-    uint256 public s_airdropAmount = 500;
+    uint256 public s_airdropAmount = 500 ether;
     address public s_receiverAddress; // Receiver in Avalanche
     address public s_erc20Address; // ERC20 token in Avalanche
     IRouterClient public immutable i_router;

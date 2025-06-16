@@ -10,6 +10,7 @@ import { IERC20 } from "@chainlink//src/v0.8/vendor/openzeppelin-solidity/v4.8.3
 import { SafeERC20 } from
     "@chainlink//src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { UntilThenERC20 } from "src/avalanche-airdrop/UntilThenERC20.sol";
 
 contract Receiver is CCIPReceiver, Ownable {
     error Receiver__NothingToWithdraw();
@@ -47,6 +48,10 @@ contract Receiver is CCIPReceiver, Ownable {
             revert Receiver__NotAllowedForSourceChainOrSenderAddress(_sourceChainSelector, _sender);
         }
         _;
+    }
+
+    function mintTest(address token, address to, uint256 amount) external onlyOwner {
+        UntilThenERC20(token).mint(to, amount);
     }
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
