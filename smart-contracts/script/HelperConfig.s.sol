@@ -39,6 +39,17 @@ contract HelperConfig is Script {
         uint256 currencyGiftFee;
         uint256 currencyGiftLinkFee;
         AaveYieldConfig aaveYieldConfig;
+        AvalancheAirdropConfig avalancheAirdropConfig;
+    }
+
+    struct AvalancheAirdropConfig {
+        address ccipSender;
+        address ccipReceiver;
+        address avalancheERC20TokenAddress;
+        address ccipSenderlinkAddress;
+        uint64 ccipAvalancheChainSelector;
+        uint64 ccipSourceChainSelector;
+        address ccipRouterAddress;
     }
 
     // Chainlink Functions
@@ -60,10 +71,24 @@ contract HelperConfig is Script {
     address internal constant SEPOLIA_AAVE_YIELD_MANAGER = 0xd39A3a6cB80cE9e1c000027EF5f515Df6ed393df;
 
     uint256 internal constant SEPOLIA_CHAIN_ID = 11_155_111;
+    uint256 internal constant AVALANCHE_FUJI_CHAIN_ID = 43_113;
     uint256 internal constant ANVIL_CHAIN_ID = 31_337;
     uint256 internal CONTENT_GIFT_FEE = 0.01 ether;
     uint256 internal CURRENCY_GIFT_FEE = 0.0001 ether;
     uint256 internal CURRENCY_GIFT_LINK_FEE = 0.05 ether;
+
+    // Avalance airdrop
+    address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0xE51d324a01FB0738002928a9a9f19d96C4250c47;
+    address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = 0xF3F189f0AE673eAE02757e7E0784f7fF8d8629e2;
+    address internal constant AVALANCHE_ERC2O_TOKEN_ADDRESS = 0x3164d84A42ec935f620d73a2e22C8b3E2Cb049aE;
+    // https://docs.chain.link/resources/link-token-contracts#ethereum-testnet-sepolia
+    address internal constant CCIP_SEPOLIA_LINK_ADDRESS = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
+    // https://docs.chain.link/ccip/directory/testnet/chain/avalanche-fuji-testnet
+    uint64 internal constant CCIP_AVALANCHE_FUJI_TESTNET_CHAIN_SELECTOR = 14_767_482_510_784_806_043;
+    // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
+    uint64 internal constant CCIP_SEPOLIA_CHAIN_SELECTOR = 16_015_286_601_757_825_753;
+    // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
+    address internal constant CCIP_SEPOLIA_ROUTER_ADDRESS = 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59;
 
     NetworkConfig public activeNetworkConfig;
 
@@ -72,6 +97,8 @@ contract HelperConfig is Script {
             activeNetworkConfig = _getSepoliaETHConfig();
         } else if (block.chainid == ANVIL_CHAIN_ID) {
             activeNetworkConfig = _getOrCreateAnvilETHConfig();
+        } else if (block.chainid == AVALANCHE_FUJI_CHAIN_ID) {
+            activeNetworkConfig = _getSepoliaETHConfig();
         } else {
             revert HelperConfig__InvalidChainId();
         }
@@ -98,6 +125,15 @@ contract HelperConfig is Script {
                 linkAddress: SEPOLIA_AAVE_LINK_ADDRESS,
                 linkATokenAddress: SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS,
                 yieldManagerAddress: SEPOLIA_AAVE_YIELD_MANAGER
+            }),
+            avalancheAirdropConfig: AvalancheAirdropConfig({
+                ccipSender: CCIP_SEPOLIA_SENDER_ADDRESS,
+                ccipReceiver: CCIP_AVALANCHE_RECEIVER_ADDRESS,
+                avalancheERC20TokenAddress: AVALANCHE_ERC2O_TOKEN_ADDRESS,
+                ccipSenderlinkAddress: CCIP_SEPOLIA_LINK_ADDRESS,
+                ccipAvalancheChainSelector: CCIP_AVALANCHE_FUJI_TESTNET_CHAIN_SELECTOR,
+                ccipSourceChainSelector: CCIP_SEPOLIA_CHAIN_SELECTOR,
+                ccipRouterAddress: CCIP_SEPOLIA_ROUTER_ADDRESS
             })
         });
     }
@@ -131,6 +167,15 @@ contract HelperConfig is Script {
                 linkAddress: address(0),
                 linkATokenAddress: address(0),
                 yieldManagerAddress: address(0)
+            }),
+            avalancheAirdropConfig: AvalancheAirdropConfig({
+                ccipSender: address(0),
+                ccipReceiver: address(0),
+                avalancheERC20TokenAddress: address(0),
+                ccipSenderlinkAddress: address(0),
+                ccipAvalancheChainSelector: 0,
+                ccipSourceChainSelector: 0,
+                ccipRouterAddress: address(0)
             })
         });
     }

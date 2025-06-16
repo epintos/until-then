@@ -2,15 +2,17 @@
 
 pragma solidity ^0.8.30;
 
-import { Script } from "forge-std/Script.sol";
+import { Script, console } from "forge-std/Script.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Log } from "@chainlink/src/v0.8/automation/interfaces/ILogAutomation.sol";
 
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
 import { HelperConfig } from "script/HelperConfig.s.sol";
 import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
+import { RedeemAirdropAutomation } from "src/avalanche-airdrop/RedeemAirdropAutomation.sol";
 
 address constant UNTIL_THEN_V1_SEPOLIA = 0x15E1CB9F78280D1301f78e98955E7355900c498B;
 
@@ -20,7 +22,7 @@ contract CreateGift is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
@@ -36,7 +38,7 @@ contract CreateGiftWithETHYield is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
@@ -52,7 +54,8 @@ contract CreateGiftWithLinkYield is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig) = helperConfig.activeNetworkConfig();
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,) =
+            helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
 
@@ -70,10 +73,45 @@ contract ClaimGift is Script {
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         UNTIL_THEN_V1_CONTRACT.claimGift(UNTIL_THEN_V1_CONTRACT.getTotalGifts());
+        vm.stopBroadcast();
+    }
+}
+
+contract Airdrop is Script {
+    function run() external {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig) =
+            helperConfig.activeNetworkConfig();
+        vm.startBroadcast(account);
+        bytes32[] memory topics = new bytes32[](2);
+        topics[0] = keccak256("GiftClaimed(address,uint256,uint256,uint256,bytes32)");
+        topics[1] = bytes32(uint256(uint160(account)));
+        Log memory log = Log({
+            index: 0,
+            timestamp: 0,
+            txHash: 0,
+            blockNumber: 0,
+            blockHash: 0,
+            source: 0x15E1CB9F78280D1301f78e98955E7355900c498B,
+            topics: topics,
+            data: hex""
+        });
+        RedeemAirdropAutomation sender = RedeemAirdropAutomation(avalancheAirdropConfig.ccipSender);
+        (bool perform, bytes memory performData) = sender.checkLog(log, hex"");
+        console.log("Perform:", perform);
+        if (perform) {
+            if (IERC20(avalancheAirdropConfig.ccipSenderlinkAddress).balanceOf(address(sender)) == 0) {
+                IERC20(avalancheAirdropConfig.ccipSenderlinkAddress).transfer(address(sender), 5 ether);
+            }
+            sender.performUpkeep(performData);
+        } else {
+            console.log("Perform is false");
+        }
+
         vm.stopBroadcast();
     }
 }

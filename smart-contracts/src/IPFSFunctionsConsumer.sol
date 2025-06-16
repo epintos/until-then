@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.30;
 
 import { FunctionsClient } from "@chainlink/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
