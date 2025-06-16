@@ -16,8 +16,9 @@ contract Deploy is Script {
 
         vm.startBroadcast(account);
         if (avalancheAirdropConfig.ccipReceiver == address(0)) {
-            receiver =
-                new Receiver(avalancheAirdropConfig.ccipSourceChainSelector, avalancheAirdropConfig.ccipRouterAddress);
+            receiver = new Receiver(
+                avalancheAirdropConfig.ccipSourceChainSelector, avalancheAirdropConfig.ccipDestRouterAddress
+            );
         } else {
             receiver = Receiver(avalancheAirdropConfig.ccipReceiver);
         }

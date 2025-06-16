@@ -26,7 +26,7 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
     address public s_erc20Address; // ERC20 token in Avalanche
     IRouterClient public immutable i_router;
     uint64 public immutable i_destinationChainSelector;
-    uint256 public s_gasLimit = 500_000;
+    uint256 public s_gasLimit = 200_000;
 
     event AirdropAmountUpdated(address indexed owner, uint256 newAirdropAmount);
     event AirdropLimitUpdated(address indexed owner, uint256 newAirdropLimit);
@@ -108,9 +108,7 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
             receiver: abi.encode(s_receiverAddress),
             data: abi.encode(s_erc20Address, mintFunctionCalldata),
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({ gasLimit: s_gasLimit }) // we need a gas limit to call the receive function
-            ),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV2({ gasLimit: s_gasLimit, allowOutOfOrderExecution: true })),
             feeToken: address(i_linkToken)
         });
 
@@ -133,7 +131,9 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
 
     function withdrawLink() external onlyOwner {
         uint256 balance = IERC20(i_linkToken).balanceOf(address(this));
-        IERC20(i_linkToken).safeTransferFrom(address(this), msg.sender, balance);
-        emit LinkWithdrawn(msg.sender, balance);
+        if (balance > 0) {
+            IERC20(i_linkToken).safeTransfer(msg.sender, balance);
+            emit LinkWithdrawn(msg.sender, balance);
+        }
     }
 }

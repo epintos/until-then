@@ -34,6 +34,9 @@ deploy-avalanche-fuji :
 set-sender-avalanche-fuji :
 	@forge script script/DeployAvalanche.s.sol:SetSender --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
 
+register-upkeeps-sepolia :
+	@forge script script/RegisterUpkeeps.s.sol:RegisterUpkeeps --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+
 get-current-timestamp:
 	cast block latest --rpc-url $(SEPOLIA_RPC_URL)| grep timestamp
 
@@ -52,6 +55,5 @@ create-gift-link-yield :
 claim-gift :
 	@forge script script/Interactions.s.sol:ClaimGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
 	
-
 airdrop :
 	@forge script script/Interactions.s.sol:Airdrop --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv

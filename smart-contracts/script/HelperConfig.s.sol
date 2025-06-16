@@ -50,7 +50,8 @@ contract HelperConfig is Script {
         address ccipSenderlinkAddress;
         uint64 ccipAvalancheChainSelector;
         uint64 ccipSourceChainSelector;
-        address ccipRouterAddress;
+        address ccipSourceRouterAddress;
+        address ccipDestRouterAddress;
     }
 
     struct GiveawayConfig {
@@ -87,8 +88,8 @@ contract HelperConfig is Script {
     uint256 internal CURRENCY_GIFT_LINK_FEE = 0.05 ether;
 
     // Avalance airdrop
-    address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0xE51d324a01FB0738002928a9a9f19d96C4250c47;
-    address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = address(0);
+    address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0x395FDF4fe945E2c94c79a168fA1f535726764218;
+    address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = 0xC17778DaC70f33d58a6D594bC1aD7f58a4F5Fa4B;
     address internal constant AVALANCHE_ERC2O_TOKEN_ADDRESS = 0x3164d84A42ec935f620d73a2e22C8b3E2Cb049aE;
     // https://docs.chain.link/resources/link-token-contracts#ethereum-testnet-sepolia
     address internal constant CCIP_SEPOLIA_LINK_ADDRESS = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
@@ -98,13 +99,15 @@ contract HelperConfig is Script {
     uint64 internal constant CCIP_SEPOLIA_CHAIN_SELECTOR = 16_015_286_601_757_825_753;
     // https://docs.chain.link/ccip/directory/testnet/chain/ethereum-testnet-sepolia
     address internal constant CCIP_SEPOLIA_ROUTER_ADDRESS = 0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59;
+    address internal constant CCIP_AVALANCHE_FUJI_ROUTER_ADDRESS = 0xF694E193200268f9a4868e4Aa017A0118C9a8177;
 
     // Giveaway
 
     address internal constant SEPOLIA_VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 internal constant SEPOLIA_GAS_LANE = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 internal constant VRF_CALLBACK_GAS_LIMIT = 500_000;
-    uint256 internal constant VRF_SUBSCRIPTION_ID = 0;
+    uint256 internal constant VRF_SUBSCRIPTION_ID =
+        33_417_377_138_417_000_668_359_383_073_717_148_462_378_291_091_203_326_927_501_459_759_537_206_218_812;
     address internal constant ETH_USD_PRICE_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
     NetworkConfig public activeNetworkConfig;
@@ -150,7 +153,8 @@ contract HelperConfig is Script {
                 ccipSenderlinkAddress: CCIP_SEPOLIA_LINK_ADDRESS,
                 ccipAvalancheChainSelector: CCIP_AVALANCHE_FUJI_TESTNET_CHAIN_SELECTOR,
                 ccipSourceChainSelector: CCIP_SEPOLIA_CHAIN_SELECTOR,
-                ccipRouterAddress: CCIP_SEPOLIA_ROUTER_ADDRESS
+                ccipSourceRouterAddress: CCIP_SEPOLIA_ROUTER_ADDRESS,
+                ccipDestRouterAddress: CCIP_AVALANCHE_FUJI_ROUTER_ADDRESS
             }),
             giveawayConfig: GiveawayConfig({
                 vrfCoordinator: SEPOLIA_VRF_COORDINATOR,
@@ -199,7 +203,8 @@ contract HelperConfig is Script {
                 ccipSenderlinkAddress: address(0),
                 ccipAvalancheChainSelector: 0,
                 ccipSourceChainSelector: 0,
-                ccipRouterAddress: address(0)
+                ccipSourceRouterAddress: address(0),
+                ccipDestRouterAddress: address(0)
             }),
             giveawayConfig: GiveawayConfig({
                 vrfCoordinator: address(0),

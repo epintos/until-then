@@ -113,7 +113,7 @@ contract DeployAirdropAutomation is Script {
                 avalancheAirdropConfig.avalancheERC20TokenAddress,
                 avalancheAirdropConfig.ccipSenderlinkAddress,
                 avalancheAirdropConfig.ccipAvalancheChainSelector,
-                avalancheAirdropConfig.ccipRouterAddress
+                avalancheAirdropConfig.ccipSourceRouterAddress
             );
         } else {
             sender = RedeemAirdropAutomation(avalancheAirdropConfig.ccipSender);
@@ -129,7 +129,7 @@ contract DeployGiveaway is Script {
         (, address account,,,,,, HelperConfig.GiveawayConfig memory giveawayConfig) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        giveaway = new Giveaway(
+        giveaway = new Giveaway{ value: 0.5 ether }(
             giveawayConfig.vrfCoordinator,
             giveawayConfig.gasLane,
             giveawayConfig.subscriptionId,

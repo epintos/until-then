@@ -46,6 +46,7 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
         uint32 callbackGasLimit,
         address priceFeed
     )
+        payable
         VRFConsumerBaseV2Plus(vrfCoordinator)
     {
         i_keyHash = gasLane;
