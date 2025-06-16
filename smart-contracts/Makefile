@@ -37,6 +37,9 @@ get-current-timestamp:
 create-gift :
 	@forge script script/Interactions.s.sol:CreateGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
 
+create-empty-gift :
+	@forge script script/Interactions.s.sol:CreateEmptyGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+
 create-gift-eth-yield :
 	@forge script script/Interactions.s.sol:CreateGiftWithETHYield --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
 
@@ -45,6 +48,7 @@ create-gift-link-yield :
 
 claim-gift :
 	@forge script script/Interactions.s.sol:ClaimGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+	
 
 airdrop :
 	@forge script script/Interactions.s.sol:Airdrop --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv

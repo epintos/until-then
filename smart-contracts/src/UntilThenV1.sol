@@ -204,7 +204,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
                 giftAmountToClaim = gift.amount - (currencyGiftFee > yieldFee ? currencyGiftFee : yieldFee);
                 yieldManager.withdrawETH(giftId, giftAmountToClaim, gift.receiver);
             }
-        } else {
+        } else if (giftAmountToClaim > 0) {
             (bool success,) = msg.sender.call{ value: giftAmountToClaim }("");
             if (!success) {
                 revert UntilThenV1__TransferFailed();

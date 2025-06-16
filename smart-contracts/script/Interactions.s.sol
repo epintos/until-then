@@ -32,6 +32,20 @@ contract CreateGift is Script {
     }
 }
 
+contract CreateEmptyGift is Script {
+    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+
+    function run() external {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,,,) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(account);
+        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.001 ether }(account, block.timestamp + 1 minutes, hex"", false, 0);
+        vm.stopBroadcast();
+    }
+}
+
 contract CreateGiftWithETHYield is Script {
     UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";

@@ -165,6 +165,7 @@ contract UntilThenV1Test is Test {
     function test_claimGiftWithETHYield() public {
         (uint256 giftId,) = _createGift({ yield: true, linkAmount: 0 });
         uint256 receiverInitialbalance = USER_RECEIVER.balance;
+        uint256 yieldManagerInitialBalance = address(aaveYieldManager).balance;
 
         vm.warp(block.timestamp + 2 weeks);
         vm.prank(USER_RECEIVER);
@@ -173,7 +174,7 @@ contract UntilThenV1Test is Test {
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
         // Yield was zero so uses currencyGiftFee
         vm.assertEq(USER_RECEIVER.balance, receiverInitialbalance + gift.amount - currencyGiftFee);
-        vm.assertEq(address(aaveYieldManager).balance, currencyGiftFee);
+        vm.assertEq(address(aaveYieldManager).balance, yieldManagerInitialBalance + currencyGiftFee);
     }
 
     function test_claimGiftWithLinkYield() public {
