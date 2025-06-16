@@ -5,6 +5,7 @@ pragma solidity ^0.8.30;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract GiftNFT is ERC721, AccessControl, Ownable {
     /// ERRORS
@@ -100,7 +101,7 @@ contract GiftNFT is ERC721, AccessControl, Ownable {
                 uriImageUrl,
                 '", "attributes":[',
                 '{"trait_type":"giftId","value":"',
-                metadata.giftId,
+                Strings.toString(metadata.giftId),
                 '"},',
                 '{"trait_type":"contentHash","value":"',
                 metadata.contentHash,

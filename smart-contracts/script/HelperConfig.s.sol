@@ -29,6 +29,7 @@ contract HelperConfig is Script {
         address wethATokenAddress;
         address linkAddress;
         address linkATokenAddress;
+        address yieldManagerAddress;
     }
 
     struct NetworkConfig {
@@ -56,6 +57,7 @@ contract HelperConfig is Script {
     address internal constant SEPOLIA_AAVE_WETH_ATOKEN_ADDRESS = 0x5b071b590a59395fE4025A0Ccc1FcC931AAc1830;
     address internal constant SEPOLIA_AAVE_LINK_ADDRESS = 0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5;
     address internal constant SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS = 0x3FfAf50D4F4E96eB78f2407c090b72e86eCaed24;
+    address internal constant SEPOLIA_AAVE_YIELD_MANAGER = 0xd39A3a6cB80cE9e1c000027EF5f515Df6ed393df;
 
     uint256 internal constant SEPOLIA_CHAIN_ID = 11_155_111;
     uint256 internal constant ANVIL_CHAIN_ID = 31_337;
@@ -94,7 +96,8 @@ contract HelperConfig is Script {
                 wethGatewayAddress: SEPOLIA_AAVE_WETH_GATEWAY_ADDRESS,
                 wethATokenAddress: SEPOLIA_AAVE_WETH_ATOKEN_ADDRESS,
                 linkAddress: SEPOLIA_AAVE_LINK_ADDRESS,
-                linkATokenAddress: SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS
+                linkATokenAddress: SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS,
+                yieldManagerAddress: SEPOLIA_AAVE_YIELD_MANAGER
             })
         });
     }
@@ -126,7 +129,8 @@ contract HelperConfig is Script {
                 wethGatewayAddress: address(0),
                 wethATokenAddress: address(0),
                 linkAddress: address(0),
-                linkATokenAddress: address(0)
+                linkATokenAddress: address(0),
+                yieldManagerAddress: address(0)
             })
         });
     }

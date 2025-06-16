@@ -19,6 +19,9 @@ deploy-sepolia :
 deploy-consumer-sepolia :
 	@forge script script/Deploy.s.sol:DeployFunctionConsumer --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
 
+deploy-aave-yield-manager-sepolia :
+	@forge script script/Deploy.s.sol:DeployAaveYieldManager --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+
 deploy-anvil :
 	@forge script script/Deploy.s.sol:Deploy --rpc-url $(RPC_URL) --account $(ANVIL_ACCOUNT) --broadcast -vvvv
 
@@ -27,6 +30,12 @@ get-current-timestamp:
 
 create-gift :
 	@forge script script/Interactions.s.sol:CreateGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+
+create-gift-eth-yield :
+	@forge script script/Interactions.s.sol:CreateGiftWithETHYield --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+
+create-gift-link-yield :
+	@forge script script/Interactions.s.sol:CreateGiftWithLinkYield --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
 
 claim-gift :
 	@forge script script/Interactions.s.sol:ClaimGift --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv

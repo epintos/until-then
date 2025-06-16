@@ -8,6 +8,7 @@ import { Test } from "forge-std/Test.sol";
 import { IPFSFunctionsConsumerMock } from "test/mocks/IPFSFunctionsConsumerMock.sol";
 import { HelperConfig } from "script/HelperConfig.s.sol";
 import { Deploy } from "script/Deploy.s.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract GiftNFTTest is Test {
     UntilThenV1 internal untilThenV1;
@@ -29,7 +30,6 @@ contract GiftNFTTest is Test {
 
         vm.prank(address(account));
         untilThenV1.transferOwnership(OWNER);
-        vm.stopPrank();
     }
 
     // mint
@@ -76,7 +76,7 @@ contract GiftNFTTest is Test {
                 giftNFT.uriImageUrl(),
                 '", "attributes":[',
                 '{"trait_type":"giftId","value":"',
-                GIFT_ID,
+                Strings.toString(GIFT_ID),
                 '"},',
                 '{"trait_type":"contentHash","value":"',
                 CONTENT_PUBLIC_HASH,

@@ -4,14 +4,18 @@ pragma solidity ^0.8.30;
 
 import { Script } from "forge-std/Script.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
 import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
 import { HelperConfig } from "script/HelperConfig.s.sol";
+import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
+
+address constant UNTIL_THEN_V1_SEPOLIA = 0x15E1CB9F78280D1301f78e98955E7355900c498B;
 
 contract CreateGift is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(0x0A101f9F99f2730655A02522237B11FF768E84fC);
+    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
@@ -26,8 +30,8 @@ contract CreateGift is Script {
     }
 }
 
-contract CreateGiftWithLink is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(0x0A101f9F99f2730655A02522237B11FF768E84fC);
+contract CreateGiftWithETHYield is Script {
+    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
@@ -35,15 +39,34 @@ contract CreateGiftWithLink is Script {
         (, address account,,,,) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UNTIL_THEN_V1_CONTRACT.createGift(
-            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0.015 ether
+        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
+            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0
+        );
+        vm.stopBroadcast();
+    }
+}
+
+contract CreateGiftWithLinkYield is Script {
+    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+
+    function run() external {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(account);
+
+        IERC20(aaveYieldConfig.linkAddress).approve(aaveYieldConfig.yieldManagerAddress, 1 ether);
+
+        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
+            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 1 ether
         );
         vm.stopBroadcast();
     }
 }
 
 contract ClaimGift is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(0x0A101f9F99f2730655A02522237B11FF768E84fC);
+    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();

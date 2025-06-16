@@ -29,14 +29,11 @@ contract Deploy is Script {
         if (consumerAddress == address(0)) {
             consumerAddress = new DeployFunctionConsumer().run();
         }
+        AaveYieldManager aaveYieldManager = AaveYieldManager(payable(aaveYieldConfig.yieldManagerAddress));
+        if (address(aaveYieldManager) == address(0)) {
+            aaveYieldManager = new DeployAaveYieldManager().run();
+        }
 
-        AaveYieldManager aaveYieldManager = new AaveYieldManager(
-            aaveYieldConfig.wethGatewayAddress,
-            aaveYieldConfig.poolAddress,
-            aaveYieldConfig.wethATokenAddress,
-            aaveYieldConfig.linkAddress,
-            aaveYieldConfig.linkATokenAddress
-        );
         UntilThenV1 untilThenV1 = new UntilThenV1(
             contentGiftFee,
             currencyGiftFee,
@@ -76,5 +73,23 @@ contract DeployFunctionConsumer is Script {
         // consumerContract.updateSource(source);
         vm.stopBroadcast();
         return address(consumerContract);
+    }
+}
+
+contract DeployAaveYieldManager is Script {
+    function run() external returns (AaveYieldManager) {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(account);
+        AaveYieldManager aaveYieldManager = new AaveYieldManager(
+            aaveYieldConfig.wethGatewayAddress,
+            aaveYieldConfig.poolAddress,
+            aaveYieldConfig.wethATokenAddress,
+            aaveYieldConfig.linkAddress,
+            aaveYieldConfig.linkATokenAddress
+        );
+        vm.stopBroadcast();
+        return aaveYieldManager;
     }
 }
