@@ -1,29 +1,85 @@
 "use client";
 
+import * as EthCrypto from "eth-crypto";
 import { Calendar, DollarSign, Info, Upload } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Address, formatEther, parseEther } from "viem";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { chainsToContracts, erc20Abi, untilThenV1Abi } from "../constants";
 
 type YieldOption = "none" | "eth" | "link";
 
 export default function CreateGift() {
+  const { address: connectedAddress } = useAccount();
   const [formData, setFormData] = useState({
     receiverAddress: "",
     releaseDate: "",
     releaseTime: "",
+    releaseHour: "",
+    releaseMinute: "",
     amount: "",
     yieldOption: "none" as YieldOption,
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [contentHash, setContentHash] = useState<string | undefined>(undefined);
+  const [isEncrypting, setIsEncrypting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { writeContract: createGiftWrite, data: createGiftTxHash, isPending: isCreatingGift } = useWriteContract();
+  const { isLoading: isConfirmingCreateGift, isSuccess: isCreateGiftConfirmed } = useWaitForTransactionReceipt({
+    hash: createGiftTxHash,
+  });
+
+  const { writeContract: approveLinkWrite, data: approveLinkTxHash, isPending: isApprovingLink } = useWriteContract();
+  const { isLoading: isConfirmingApproveLink, isSuccess: isApproveLinkConfirmed } = useWaitForTransactionReceipt({
+    hash: approveLinkTxHash,
+  });
+
+  const { data: linkAllowance, refetch: refetchLinkAllowance } = useReadContract({
+    abi: erc20Abi,
+    address: chainsToContracts[11155111].linkToken as Address,
+    functionName: "allowance",
+    args: [(connectedAddress || "0x0") as Address, chainsToContracts[11155111].untilThenV1 as Address],
+    query: {
+      enabled: connectedAddress && formData.yieldOption === "link",
+    },
+  });
+
+  // Refetch LINK allowance after approval is confirmed
+  useEffect(() => {
+    if (isApproveLinkConfirmed) {
+      refetchLinkAllowance();
+    }
+  }, [isApproveLinkConfirmed, refetchLinkAllowance]);
 
   const calculateFees = () => {
-    const amount = parseFloat(formData.amount) || 0;
-    const gasFee = 0.005; // Estimated gas fee
-    const platformFee = amount * 0.02; // 2% platform fee
+    const amountAsNumber = parseFloat(formData.amount) || 0; // This is the input as a number (e.g., 0.001 or 10).
+
+    let contentUploadFee = 0;
+    if (uploadedFile) {
+      contentUploadFee = 0.01;
+    }
+
+    let platformFee = 0;
+    if (formData.yieldOption === "eth") {
+      platformFee = Math.max(amountAsNumber * 0.10, 0.0001); // amountAsNumber is already in ETH for calc
+    } else if (formData.yieldOption === "link") {
+      platformFee = Math.max(amountAsNumber * 0.10, 0.05); // amountAsNumber is already in LINK for calc
+    } else if (formData.yieldOption === "none") {
+      platformFee = 0.0001; // Fixed platform fee for no yield
+    }
+
+    let totalEthFees = contentUploadFee; // Always include content upload fee if present
+
+    if (formData.yieldOption === "none") {
+      totalEthFees += platformFee; // Add platform fee ONLY for "No Yield"
+    }
+
     return {
-      gasFee,
-      platformFee,
-      total: gasFee + platformFee,
+      contentUploadFee: contentUploadFee,
+      platformFee: platformFee, // This will still hold the LINK platform fee for display purposes.
+      total: totalEthFees,
     };
   };
 
@@ -31,43 +87,143 @@ export default function CreateGift() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file && file.name.endsWith(".txt")) {
       setUploadedFile(file);
+    } else if (file) {
+      alert("Only .txt files are allowed.");
+      setUploadedFile(null);
+      event.target.value = ''; // Clear the file input
+    }
+  };
+
+  const handleApproveLink = async () => {
+    if (!connectedAddress || !formData.amount) return;
+
+    try {
+      approveLinkWrite({
+        abi: erc20Abi,
+        address: chainsToContracts[11155111].linkToken as Address,
+        functionName: "approve",
+        args: [chainsToContracts[11155111].untilThenV1 as Address, parseEther(formData.amount)],
+      });
+    } catch (error) {
+      console.error("Error approving LINK:", error);
+      alert("Failed to approve LINK.");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
-    
-    // Simulate gift creation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log("Creating gift:", {
-      ...formData,
-      file: uploadedFile?.name,
-      fees,
-    });
-    
-    setIsCreating(false);
-    // Reset form
-    setFormData({
-      receiverAddress: "",
-      releaseDate: "",
-      releaseTime: "",
-      amount: "",
-      yieldOption: "none",
-    });
-    setUploadedFile(null);
-    alert("Gift created successfully!");
+    setContentHash(undefined); // Clear previous hash
+
+    let currentContentHash: string | undefined = undefined;
+
+    if (uploadedFile) {
+      setIsEncrypting(true);
+      try {
+        const reader = new FileReader();
+        reader.readAsText(uploadedFile);
+        await new Promise((resolve, reject) => {
+          reader.onload = async (event) => {
+            try {
+              // Use a placeholder receiver public key. In a real app, this would come from the receiver's profile.
+              const receiverIdentity = EthCrypto.createIdentity();
+              const receiverPublicKey = receiverIdentity.publicKey; // Use the raw public key string
+
+              const encrypted = await EthCrypto.encryptWithPublicKey(receiverPublicKey, event.target?.result as string);
+              const encryptedString = EthCrypto.cipher.stringify(encrypted);
+
+              setIsEncrypting(false);
+              setIsUploading(true);
+
+              const response = await fetch("/api/upload-private", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ encryptedContent: encryptedString }),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to upload content to Pinata.");
+              }
+
+              const data = await response.json();
+              currentContentHash = data.cid;
+              setContentHash(data.cid);
+              setIsUploading(false);
+              resolve(null);
+            } catch (encryptError) {
+              console.error("Encryption or upload failed:", encryptError);
+              alert("Failed to encrypt or upload content.");
+              setIsEncrypting(false);
+              setIsUploading(false);
+              setIsCreating(false);
+              reject(encryptError);
+            }
+          };
+          reader.onerror = (error) => {
+            console.error("File reading error:", error);
+            alert("Failed to read file.");
+            setIsEncrypting(false);
+            setIsCreating(false);
+            reject(error);
+          };
+        });
+      } catch (overallError) {
+        console.error("Overall file processing error:", overallError);
+        setIsCreating(false);
+        return; // Stop form submission
+      }
+    }
+
+    // Convert release date and time to a single timestamp
+    const [year, month, day] = formData.releaseDate.split('-').map(Number);
+    const [hour, minute] = [parseInt(formData.releaseHour), parseInt(formData.releaseMinute)];
+    const releaseDateObj = new Date(year, month - 1, day, hour, minute);
+    const releaseTimestamp = Math.floor(releaseDateObj.getTime() / 1000); // Unix timestamp in seconds
+
+    const amountInWei = parseEther(formData.amount);
+
+    try {
+      const receiverAddressAsAddress = formData.receiverAddress.startsWith("0x") 
+        ? formData.receiverAddress as Address 
+        : `0x${formData.receiverAddress}` as Address;
+
+      createGiftWrite({
+        abi: untilThenV1Abi,
+        address: chainsToContracts[11155111].untilThenV1 as Address,
+        functionName: "createGift",
+        args: [
+          receiverAddressAsAddress, 
+          amountInWei,
+          releaseTimestamp,
+          currentContentHash || "",
+          formData.yieldOption === "link",
+        ],
+        value: formData.yieldOption === "link" ? parseEther(fees.total.toString()) : amountInWei,
+      });
+    } catch (error) {
+      console.error("Error creating gift:", error);
+      alert("Failed to create gift.");
+      setIsCreating(false);
+    }
   };
 
-  const isFormValid = 
+  const isFormValid =
     formData.receiverAddress &&
     formData.releaseDate &&
-    formData.releaseTime &&
+    formData.releaseHour !== "" &&
+    formData.releaseMinute !== "" &&
     formData.amount &&
     parseFloat(formData.amount) > 0;
+
+  const isLinkApproved = 
+    linkAllowance !== undefined && 
+    linkAllowance !== null && 
+    typeof linkAllowance === 'bigint' &&
+    linkAllowance >= parseEther(formData.amount || "0");
+
+  const showApproveLinkButton = formData.yieldOption === "link" && !isLinkApproved;
 
   return (
     <div className="max-w-2xl">
@@ -111,12 +267,39 @@ export default function CreateGift() {
               <Calendar className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Release Time
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                value={formData.releaseHour}
+                onChange={(e) => setFormData(prev => ({ ...prev, releaseHour: e.target.value }))}
+                placeholder="HH"
+                min="0"
+                max="23"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+              <input
+                type="number"
+                value={formData.releaseMinute}
+                onChange={(e) => setFormData(prev => ({ ...prev, releaseMinute: e.target.value }))}
+                placeholder="MM"
+                min="0"
+                max="59"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+          </div>
         </div>
 
         {/* File Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Content
+            Upload Content (Optional)
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input
@@ -124,7 +307,7 @@ export default function CreateGift() {
               onChange={handleFileUpload}
               className="hidden"
               id="file-upload"
-              accept="image/*,video/*,.pdf,.txt"
+              accept=".txt"
             />
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -135,7 +318,7 @@ export default function CreateGift() {
               ) : (
                 <p className="text-sm text-gray-600">
                   Click to upload or drag and drop<br />
-                  Images, videos, PDFs, or text files
+                  Only .txt files allowed.
                 </p>
               )}
             </label>
@@ -174,16 +357,16 @@ export default function CreateGift() {
         {/* Amount */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount (ETH)
+            Amount
           </label>
           <div className="relative">
             <input
               type="number"
-              step="0.001"
+              step="any"
               min="0"
               value={formData.amount}
               onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-              placeholder="0.1"
+              placeholder="e.g., 0.001 or 10"
               className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -199,39 +382,80 @@ export default function CreateGift() {
               <span className="text-sm font-medium text-gray-700">Fee Breakdown</span>
             </div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Gas Fee:</span>
-                <span className="font-medium">{fees.gasFee.toFixed(4)} ETH</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Platform Fee (2%):</span>
-                <span className="font-medium">{fees.platformFee.toFixed(4)} ETH</span>
-              </div>
+              {(uploadedFile) && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Content Upload Fee:</span>
+                  <span className="font-medium">{fees.contentUploadFee.toFixed(4)} ETH</span>
+                </div>
+              )}
+
+              {formData.yieldOption !== "none" ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Platform Fee:</span>
+                    {/* No amount displayed when yield is chosen, only explanation */}
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    When the yield option is chosen, a 10% of the amount + yield will be taken. If that is less, then 0.0001 ether is taken for eth yield and 0.05 ether for link yield.
+                  </p>
+                </>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Platform Fee:</span>
+                  <span className="font-medium">{fees.platformFee.toFixed(4)} ETH</span> {/* Show amount for no yield */}
+                </div>
+              )}
               <div className="flex justify-between border-t pt-2 font-medium">
                 <span>Total Fees:</span>
-                <span>{fees.total.toFixed(4)} ETH</span>
+                <span>{fees.total.toFixed(6)} ETH</span>
               </div>
               <div className="flex justify-between text-blue-600 font-medium">
-                <span>Total Required:</span>
-                <span>{(parseFloat(formData.amount) + fees.total).toFixed(4)} ETH</span>
+                <span>Total ETH to send:</span>
+                <span>
+                  {formData.yieldOption === "link" ? fees.total.toFixed(4) : formatEther(parseEther(formData.amount))} ETH
+                </span>
               </div>
+              {(formData.yieldOption === "eth" || formData.yieldOption === "none") && (
+                <p className="text-xs text-gray-500">Fees will be deducted from this amount.</p>
+              )}
+              {formData.yieldOption === "link" && (
+                <div className="flex justify-between text-blue-600 font-medium mt-2">
+                  <span>Total LINK to approve:</span>
+                  <span>{parseFloat(formData.amount)} LINK</span>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Submit Button */}
+        {showApproveLinkButton && (
+          <button
+            type="button"
+            onClick={handleApproveLink}
+            disabled={isApprovingLink || isConfirmingApproveLink}
+            className="w-full py-3 px-4 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75"
+          >
+            {isApprovingLink ? "Approving LINK..." : isConfirmingApproveLink ? "LINK Approved!" : "Approve LINK"}
+          </button>
+        )}
+
         <button
           type="submit"
-          disabled={!isFormValid || isCreating}
-          className={`w-full py-4 px-6 rounded-lg font-medium text-white transition-colors ${
-            isFormValid && !isCreating
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {isCreating ? "Creating Gift..." : "Create Gift"}
-        </button>
-      </form>
-    </div>
-  );
-}
+          disabled={!isFormValid || isCreating || isCreatingGift || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved)}
+          className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
+          >
+            {isCreating ? "Creating Gift..." :
+             isCreatingGift ? "Confirming Gift..." : 
+             isEncrypting ? "Encrypting Content..." : 
+             isUploading ? "Uploading Content..." :
+             "Create Gift"}
+          </button>
+
+          {isConfirmingCreateGift && (
+            <p className="text-center text-green-600 mt-4">Gift created successfully! Transaction Hash: {createGiftTxHash}</p>
+          )}
+
+        </form>
+      </div>
+    );
+  }

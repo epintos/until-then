@@ -1,0 +1,26 @@
+import { NextResponse } from "next/server";
+import { PinataSDK } from "pinata";
+
+const pinata = new PinataSDK({
+  pinataJwt: process.env.PINATA_API_JWT,
+  pinataGateway: process.env.PINATA_GATEWAY,
+});
+
+export async function POST(request: Request) {
+  try {
+    const { encryptedContent } = await request.json();
+
+    if (!encryptedContent) {
+      return NextResponse.json({ error: "No encrypted content provided" }, { status: 400 });
+    }
+
+    const result = await pinata.upload.private.json(
+      { encryptedContent }
+    );
+
+    return NextResponse.json({ cid: result.cid }, { status: 200 });
+  } catch (error) {
+    console.error("Error uploading to Pinata:", error);
+    return NextResponse.json({ error: "Failed to upload content to Pinata" }, { status: 500 });
+  }
+} 
