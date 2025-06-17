@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.30;
 
-import { Script } from "forge-std/Script.sol";
+import { Script, console } from "forge-std/Script.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { UntilThenV1 } from "src/UntilThenV1.sol";
@@ -25,6 +25,7 @@ contract Deploy is Script {
             uint256 currencyGiftLinkFee,
             HelperConfig.AaveYieldConfig memory aaveYieldConfig,
             ,
+            ,
         ) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -37,8 +38,9 @@ contract Deploy is Script {
         if (address(aaveYieldManager) == address(0)) {
             aaveYieldManager = new DeployAaveYieldManager().run();
         }
-
-        UntilThenV1 untilThenV1 = new UntilThenV1(
+        UntilThenV1 untilThenV1; // = UntilThenV1(untilThenV1Address);
+        // if (untilThenV1Address == address(0)) {
+        untilThenV1 = new UntilThenV1(
             contentGiftFee,
             currencyGiftFee,
             currencyGiftLinkFee,
@@ -47,6 +49,7 @@ contract Deploy is Script {
             address(aaveYieldManager),
             aaveYieldConfig.linkAddress
         );
+        // }
         aaveYieldManager.grantDepositWithdrawRole(address(untilThenV1));
         giftNFT.grantMintAndBurnRole(address(untilThenV1));
         giftNFT.grantUpdateContentRole(consumerAddress);
@@ -62,7 +65,7 @@ contract Deploy is Script {
 contract DeployFunctionConsumer is Script {
     function run() external returns (address) {
         HelperConfig helperConfig = new HelperConfig();
-        (HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig, address account,,,,,,) =
+        (HelperConfig.ChainlinkFunctionsConfig memory chainlinkFunctionsConfig, address account,,,,,,,) =
             helperConfig.activeNetworkConfig();
         // string memory source = vm.readFile("../../chainlink-function/src/source.js");
 
@@ -83,7 +86,7 @@ contract DeployFunctionConsumer is Script {
 contract DeployAaveYieldManager is Script {
     function run() external returns (AaveYieldManager) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,) =
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -103,7 +106,7 @@ contract DeployAaveYieldManager is Script {
 contract DeployAirdropAutomation is Script {
     function run() external returns (RedeemAirdropAutomation sender) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,,) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
@@ -126,7 +129,8 @@ contract DeployAirdropAutomation is Script {
 contract DeployGiveaway is Script {
     function run() external returns (Giveaway giveaway) {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,, HelperConfig.GiveawayConfig memory giveawayConfig) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,, HelperConfig.GiveawayConfig memory giveawayConfig,) =
+            helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
         giveaway = new Giveaway{ value: 0.5 ether }(

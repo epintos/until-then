@@ -47,7 +47,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
 
     /// STATE VARIABLES
     uint256 internal totalGifts;
-    GiftNFT internal giftNFTContract;
+    GiftNFT public giftNFTContract;
     IPFSFunctionsConsumer internal ipfsFunctionsConsumer;
     mapping(address receiver => Gift[] gifts) internal receiverGifts;
     mapping(address sender => Gift[] gifts) internal senderGifts;

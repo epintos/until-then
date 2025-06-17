@@ -41,6 +41,7 @@ contract HelperConfig is Script {
         AaveYieldConfig aaveYieldConfig;
         AvalancheAirdropConfig avalancheAirdropConfig;
         GiveawayConfig giveawayConfig;
+        address untilThenV1Address;
     }
 
     struct AvalancheAirdropConfig {
@@ -110,6 +111,8 @@ contract HelperConfig is Script {
         33_417_377_138_417_000_668_359_383_073_717_148_462_378_291_091_203_326_927_501_459_759_537_206_218_812;
     address internal constant ETH_USD_PRICE_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
+    address internal constant UNTIL_THEN_V1_ADDRESS_SEPOLIA = 0x15E1CB9F78280D1301f78e98955E7355900c498B;
+
     NetworkConfig public activeNetworkConfig;
 
     constructor() {
@@ -162,7 +165,8 @@ contract HelperConfig is Script {
                 subscriptionId: VRF_SUBSCRIPTION_ID,
                 callbackGasLimit: VRF_CALLBACK_GAS_LIMIT,
                 priceFeed: ETH_USD_PRICE_FEED
-            })
+            }),
+            untilThenV1Address: UNTIL_THEN_V1_ADDRESS_SEPOLIA
         });
     }
 
@@ -212,7 +216,8 @@ contract HelperConfig is Script {
                 subscriptionId: 0,
                 callbackGasLimit: 100,
                 priceFeed: address(0)
-            })
+            }),
+            untilThenV1Address: address(0)
         });
     }
 }

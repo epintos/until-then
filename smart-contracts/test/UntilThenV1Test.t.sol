@@ -49,6 +49,7 @@ contract UntilThenV1Test is Test {
             uint256 _currencyGiftLinkFee,
             HelperConfig.AaveYieldConfig memory aaveYieldConfig,
             ,
+            ,
         ) = helperConfig.activeNetworkConfig();
         contentGiftFee = _contentGiftFee;
         currencyGiftFee = _currencyGiftFee;
@@ -205,9 +206,10 @@ contract UntilThenV1Test is Test {
         untilThenV1.claimGift(giftId);
 
         vm.warp(block.timestamp + 2 weeks);
+        uint256 lastId = untilThenV1.getTotalGifts();
         vm.prank(USER_RECEIVER);
         vm.expectRevert(UntilThenV1.UntilThenV1__GiftDoesNotExist.selector);
-        untilThenV1.claimGift(2);
+        untilThenV1.claimGift(lastId + 1);
 
         vm.prank(address(this));
         vm.expectRevert(UntilThenV1.UntilThenV1__NotAuthorizedToClaimGift.selector);

@@ -14,18 +14,15 @@ import { HelperConfig } from "script/HelperConfig.s.sol";
 import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
 import { RedeemAirdropAutomation } from "src/avalanche-airdrop/RedeemAirdropAutomation.sol";
 
-address constant UNTIL_THEN_V1_SEPOLIA = 0x15E1CB9F78280D1301f78e98955E7355900c498B;
-
 contract CreateGift is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
+        UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
             account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, false, 0
         );
         vm.stopBroadcast();
@@ -33,29 +30,29 @@ contract CreateGift is Script {
 }
 
 contract CreateEmptyGift is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.001 ether }(account, block.timestamp + 1 minutes, hex"", false, 0);
+        UntilThenV1(untilThenV1Address).createGift{ value: 0.001 ether }(
+            account, block.timestamp + 1 minutes, hex"", false, 0
+        );
         vm.stopBroadcast();
     }
 }
 
 contract CreateGiftWithETHYield is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
+        UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
             account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0
         );
         vm.stopBroadcast();
@@ -63,19 +60,18 @@ contract CreateGiftWithETHYield is Script {
 }
 
 contract CreateGiftWithLinkYield is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
     string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,) =
+        (, address account,,,, HelperConfig.AaveYieldConfig memory aaveYieldConfig,,, address untilThenV1Address) =
             helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
 
         IERC20(aaveYieldConfig.linkAddress).approve(aaveYieldConfig.yieldManagerAddress, 1 ether);
 
-        UNTIL_THEN_V1_CONTRACT.createGift{ value: 0.015 ether }(
+        UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
             account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 1 ether
         );
         vm.stopBroadcast();
@@ -83,14 +79,12 @@ contract CreateGiftWithLinkYield is Script {
 }
 
 contract ClaimGift is Script {
-    UntilThenV1 private constant UNTIL_THEN_V1_CONTRACT = UntilThenV1(UNTIL_THEN_V1_SEPOLIA);
-
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,,,) = helperConfig.activeNetworkConfig();
+        (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UNTIL_THEN_V1_CONTRACT.claimGift(UNTIL_THEN_V1_CONTRACT.getTotalGifts());
+        UntilThenV1(untilThenV1Address).claimGift(UntilThenV1(untilThenV1Address).getTotalGifts());
         vm.stopBroadcast();
     }
 }
@@ -98,7 +92,7 @@ contract ClaimGift is Script {
 contract Airdrop is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
+        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,,) =
             helperConfig.activeNetworkConfig();
         vm.startBroadcast(account);
         bytes32[] memory topics = new bytes32[](2);

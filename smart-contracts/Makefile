@@ -4,9 +4,7 @@
 
 build :; forge build
 
-test :; forge test
-
-test-fork-sepolia :; @forge test --fork-url $(SEPOLIA_RPC_URL)
+test :; @forge test --fork-url $(SEPOLIA_RPC_URL)
 
 install :
 	forge install foundry-rs/forge-std@v1.9.7 --no-git && \

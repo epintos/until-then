@@ -50,8 +50,17 @@ interface AutomationRegistrarInterface {
 contract RegisterUpkeeps is Script {
     function run() public {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,) =
-            helperConfig.activeNetworkConfig();
+        (
+            ,
+            address account,
+            ,
+            ,
+            ,
+            ,
+            HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,
+            ,
+            address untilThenV1Address
+        ) = helperConfig.activeNetworkConfig();
         AutomationRegistrarInterface registrar =
             AutomationRegistrarInterface(0xb0E49c5D0d05cbc241d68c05BC5BA1d1B7B72976);
         uint96 funds = 10 ether;
@@ -66,7 +75,7 @@ contract RegisterUpkeeps is Script {
             triggerType: 1,
             checkData: hex"",
             triggerConfig: abi.encode(
-                0x15E1CB9F78280D1301f78e98955E7355900c498B, // emitter
+                untilThenV1Address,
                 0,
                 keccak256("GiftClaimed(address,uint256,uint256,uint256,bytes32)"),
                 bytes32(0),
