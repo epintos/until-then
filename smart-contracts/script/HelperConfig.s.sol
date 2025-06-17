@@ -111,7 +111,7 @@ contract HelperConfig is Script {
         33_417_377_138_417_000_668_359_383_073_717_148_462_378_291_091_203_326_927_501_459_759_537_206_218_812;
     address internal constant ETH_USD_PRICE_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
-    address internal constant UNTIL_THEN_V1_ADDRESS_SEPOLIA = 0x15E1CB9F78280D1301f78e98955E7355900c498B;
+    address internal constant UNTIL_THEN_V1_ADDRESS_SEPOLIA = 0x1f4feC708F7Ff9186e760B1754dCb7927a57E6fd;
 
     NetworkConfig public activeNetworkConfig;
 

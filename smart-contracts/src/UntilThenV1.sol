@@ -46,11 +46,11 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     }
 
     /// STATE VARIABLES
-    uint256 internal totalGifts;
+    uint256 public totalGifts;
     GiftNFT public giftNFTContract;
-    IPFSFunctionsConsumer internal ipfsFunctionsConsumer;
-    mapping(address receiver => Gift[] gifts) internal receiverGifts;
-    mapping(address sender => Gift[] gifts) internal senderGifts;
+    IPFSFunctionsConsumer public ipfsFunctionsConsumer;
+    mapping(address receiver => uint256[] giftId) internal receiverGiftsIds;
+    mapping(address sender => uint256[] giftId) internal senderGiftsIds;
     mapping(uint256 id => Gift gift) internal gifts;
     mapping(string yieldCode => IYieldManager yieldManager) public yieldManagers;
 
@@ -159,8 +159,8 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
             nftClaimedId: 0
         });
         gifts[giftId] = gift;
-        senderGifts[msg.sender].push(gift);
-        receiverGifts[receiver].push(gift);
+        senderGiftsIds[msg.sender].push(gift.id);
+        receiverGiftsIds[receiver].push(gift.id);
         if (yield) {
             if (linkYield) {
                 yieldManager.depositERC20(gift.sender, giftId, erc20Amount);
@@ -269,23 +269,15 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     }
 
     // PUBLIC & EXTERNAL VIEW FUNCTIONS
-    function getTotalGifts() external view returns (uint256) {
-        return totalGifts;
-    }
-
     function getGiftById(uint256 id) external view returns (Gift memory) {
         return gifts[id];
     }
 
-    function getSenderGifts(address sender) external view returns (Gift[] memory) {
-        return senderGifts[sender];
+    function getSenderGiftsIds(address sender) external view returns (uint256[] memory) {
+        return senderGiftsIds[sender];
     }
 
-    function getReceiverGifts(address receiver) external view returns (Gift[] memory) {
-        return receiverGifts[receiver];
-    }
-
-    function getIPFSConsumer() external view returns (address) {
-        return address(ipfsFunctionsConsumer);
+    function getReceiverGiftsIds(address receiver) external view returns (uint256[] memory) {
+        return receiverGiftsIds[receiver];
     }
 }

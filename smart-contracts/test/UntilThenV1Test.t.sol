@@ -94,7 +94,7 @@ contract UntilThenV1Test is Test {
         emit GiftCreated(USER_SENDER, USER_RECEIVER, 1);
         (uint256 giftId, uint256 amount) = _createGift({ yield: false, linkAmount: 0 });
 
-        vm.assertEq(untilThenV1.getTotalGifts(), 1);
+        vm.assertEq(untilThenV1.totalGifts(), 1);
         UntilThenV1.Gift memory gift = untilThenV1.getGiftById(giftId);
         vm.assertEq(gift.id, giftId);
         vm.assertEq(uint256(gift.status), uint256(UntilThenV1.GiftStatus.PENDING));
@@ -108,8 +108,8 @@ contract UntilThenV1Test is Test {
         vm.assertEq(gift.nftClaimedId, 0);
 
         vm.assertEq(address(untilThenV1).balance, amount);
-        vm.assertEq(untilThenV1.getSenderGifts(USER_SENDER)[0].id, giftId);
-        vm.assertEq(untilThenV1.getReceiverGifts(USER_RECEIVER)[0].id, giftId);
+        vm.assertEq(untilThenV1.getSenderGiftsIds(USER_SENDER)[0], giftId);
+        vm.assertEq(untilThenV1.getReceiverGiftsIds(USER_RECEIVER)[0], giftId);
     }
 
     function test_createGiftWithETHYield() public {
@@ -206,7 +206,7 @@ contract UntilThenV1Test is Test {
         untilThenV1.claimGift(giftId);
 
         vm.warp(block.timestamp + 2 weeks);
-        uint256 lastId = untilThenV1.getTotalGifts();
+        uint256 lastId = untilThenV1.totalGifts();
         vm.prank(USER_RECEIVER);
         vm.expectRevert(UntilThenV1.UntilThenV1__GiftDoesNotExist.selector);
         untilThenV1.claimGift(lastId + 1);

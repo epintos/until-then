@@ -26,7 +26,7 @@ contract GiftNFTTest is Test {
         HelperConfig helperConfig;
         (untilThenV1, giftNFT, helperConfig,) = deployer.run();
         (, address account,,,,,,,) = helperConfig.activeNetworkConfig();
-        consumer = IPFSFunctionsConsumerMock(address(untilThenV1.getIPFSConsumer()));
+        consumer = IPFSFunctionsConsumerMock(address(untilThenV1.ipfsFunctionsConsumer()));
 
         vm.prank(address(account));
         untilThenV1.transferOwnership(OWNER);

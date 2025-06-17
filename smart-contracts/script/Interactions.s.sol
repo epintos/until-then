@@ -84,7 +84,7 @@ contract ClaimGift is Script {
         (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UntilThenV1(untilThenV1Address).claimGift(UntilThenV1(untilThenV1Address).getTotalGifts());
+        UntilThenV1(untilThenV1Address).claimGift(UntilThenV1(untilThenV1Address).totalGifts());
         vm.stopBroadcast();
     }
 }
