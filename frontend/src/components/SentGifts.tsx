@@ -1,7 +1,7 @@
 "use client";
 
 import { chainsToContracts, untilThenV1Abi } from "@/constants";
-import { Calendar, DollarSign, Hash, TrendingUp } from "lucide-react";
+import { Calendar, DollarSign, Hash, Tag, TrendingUp } from "lucide-react";
 import { useAccount, useChainId, useReadContract } from "wagmi";
 
 interface Gift {
@@ -23,15 +23,19 @@ export default function SentGifts() {
   const untilThenAddress =
     (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
 
+
   const { data: giftsData } = useReadContract({
     abi: untilThenV1Abi,
     address: untilThenAddress,
-    functionName: "senderGifts",
+    functionName: "getSenderGifts",
     args: [address as `0x${string}`],
+    query: {
+      enabled: !!address && untilThenAddress !== "0x", // Only enable query if address and contract address are valid
+    },
   });
 
   const gifts = giftsData as Gift[] | undefined;
-  console.log(gifts);
+  console.log("SentGifts - Gifts Data:", gifts);
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000);
@@ -43,7 +47,7 @@ export default function SentGifts() {
       minute: '2-digit',
       hour12: false, // Use 24-hour format for consistency
     };
-    return new Intl.DateTimeFormat('en-US', options).format(date);
+    return new Intl.DateTimeFormat('en-GB', options).format(date);
   };
 
   const getStatus = (status: number) => {
@@ -130,7 +134,15 @@ export default function SentGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <Hash className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600 font-mono">
-                    {gift.contentHash.slice(0, 12)}...
+                    {gift.contentHash ? `${gift.contentHash.slice(0, 12)}...` : "No content"}
+                  </span>
+                </div>
+
+                {/* NFT Claimed ID */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Tag className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 font-mono">
+                    {status === "Pending" ? "Not claimed yet" : gift.nftClaimedId.toString()}
                   </span>
                 </div>
 
@@ -146,7 +158,8 @@ export default function SentGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-900 font-medium">
-                    {formatAmount(gift.amount)} ETH
+                    {formatAmount(gift.amount)}{" "}
+                    {gift.isYield && gift.linkYield ? "LINK" : "ETH"}
                   </span>
                 </div>
 
@@ -174,12 +187,7 @@ export default function SentGifts() {
 
                 {/* Action Button */}
                 <div className="mt-4">
-                  {status === "pending" && (
-                    <button className="w-full py-2 px-4 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
-                      View Details
-                    </button>
-                  )}
-                  {status === "claimed" && (
+                  {status === "Claimed" && (
                     <button className="w-full py-2 px-4 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
                       View Transaction
                     </button>
