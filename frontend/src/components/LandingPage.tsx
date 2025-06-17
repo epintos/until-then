@@ -94,6 +94,37 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         </div>
       </div>
 
+      {/* Promotions Section */}
+      <div className="mb-16">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl p-6 text-white">
+            <div className="flex items-center mb-4">
+              <Gift className="w-8 h-8 mr-3" />
+              <h3 className="text-2xl font-bold">Early Claimer Bonus</h3>
+            </div>
+            <p className="text-lg mb-2">
+              🎉 <strong>First 100 claims get a $100 prize!</strong>
+            </p>
+            <p className="opacity-90">
+              Be among the first to experience time-locked gifts and earn exclusive rewards.
+            </p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white">
+            <div className="flex items-center mb-4">
+              <Zap className="w-8 h-8 mr-3" />
+              <h3 className="text-2xl font-bold">Weekly Avalanche Rewards</h3>
+            </div>
+            <p className="text-lg mb-2">
+              🪙 <strong>500 UntilThen tokens weekly!</strong>
+            </p>
+            <p className="opacity-90">
+              Every gift claimer can participate in weekly token giveaways on Avalanche.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
         <h2 className="text-3xl font-bold mb-4">Ready to Send Your First Gift?</h2>
