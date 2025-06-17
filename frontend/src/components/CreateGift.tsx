@@ -111,18 +111,6 @@ export default function CreateGift() {
               <Calendar className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Release Time
-            </label>
-            <input
-              type="time"
-              value={formData.releaseTime}
-              onChange={(e) => setFormData(prev => ({ ...prev, releaseTime: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
         </div>
 
         {/* File Upload */}

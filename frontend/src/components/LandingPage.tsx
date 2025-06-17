@@ -1,4 +1,5 @@
 import { Clock, Gift, Shield, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface LandingPageProps {
   onStart: () => void;
@@ -6,6 +7,16 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onStart, isConnected }: LandingPageProps) {
+  const [displayText, setDisplayText] = useState("Connect your wallet to begin sending gifts through time.");
+
+  useEffect(() => {
+    if (isConnected) {
+      setDisplayText("You're all set! Start creating time-locked gifts now.");
+    } else {
+      setDisplayText("Connect your wallet to begin sending gifts through time.");
+    }
+  }, [isConnected]); // Update when isConnected changes
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
       {/* Hero Section */}
@@ -129,10 +140,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
       <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
         <h2 className="text-3xl font-bold mb-4">Ready to Send Your First Gift?</h2>
         <p className="text-xl mb-8 opacity-90">
-          {isConnected 
-            ? "You're all set! Start creating time-locked gifts now."
-            : "Connect your wallet to begin sending gifts through time."
-          }
+          {displayText}
         </p>
         <button
           onClick={onStart}
