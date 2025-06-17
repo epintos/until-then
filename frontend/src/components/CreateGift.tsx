@@ -13,6 +13,7 @@ export default function CreateGift() {
   const { address: connectedAddress } = useAccount();
   const [formData, setFormData] = useState({
     receiverAddress: "",
+    receiverPublicKey: "",
     releaseDate: "",
     releaseTime: "",
     releaseHour: "",
@@ -122,57 +123,36 @@ export default function CreateGift() {
     if (uploadedFile) {
       setIsEncrypting(true);
       try {
-        const reader = new FileReader();
-        reader.readAsText(uploadedFile);
-        await new Promise((resolve, reject) => {
-          reader.onload = async (event) => {
-            try {
-              // Use a placeholder receiver public key. In a real app, this would come from the receiver's profile.
-              const receiverIdentity = EthCrypto.createIdentity();
-              const receiverPublicKey = receiverIdentity.publicKey; // Use the raw public key string
+        const receiverPublicKey = formData.receiverPublicKey;
+        if (!receiverPublicKey) throw new Error("Receiver public key is required for encryption.");
 
-              const encrypted = await EthCrypto.encryptWithPublicKey(receiverPublicKey, event.target?.result as string);
-              const encryptedString = EthCrypto.cipher.stringify(encrypted);
+        const fileText = await uploadedFile.text();
+        const encrypted = await EthCrypto.encryptWithPublicKey(receiverPublicKey, fileText);
+        const encryptedString = EthCrypto.cipher.stringify(encrypted);
 
-              setIsEncrypting(false);
-              setIsUploading(true);
+        setIsEncrypting(false);
+        setIsUploading(true);
 
-              const response = await fetch("/api/upload-private", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ encryptedContent: encryptedString }),
-              });
-
-              if (!response.ok) {
-                throw new Error("Failed to upload content to Pinata.");
-              }
-
-              const data = await response.json();
-              currentContentHash = data.cid;
-              setContentHash(data.cid);
-              setIsUploading(false);
-              resolve(null);
-            } catch (encryptError) {
-              console.error("Encryption or upload failed:", encryptError);
-              alert("Failed to encrypt or upload content.");
-              setIsEncrypting(false);
-              setIsUploading(false);
-              setIsCreating(false);
-              reject(encryptError);
-            }
-          };
-          reader.onerror = (error) => {
-            console.error("File reading error:", error);
-            alert("Failed to read file.");
-            setIsEncrypting(false);
-            setIsCreating(false);
-            reject(error);
-          };
+        const response = await fetch("/api/upload-private", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ encryptedContent: encryptedString }),
         });
-      } catch (overallError) {
-        console.error("Overall file processing error:", overallError);
+
+        if (!response.ok) {
+          throw new Error("Failed to upload content to Pinata.");
+        }
+
+        const data = await response.json();
+        currentContentHash = data.cid;
+        setContentHash(data.cid);
+        setIsUploading(false);
+      } catch (encryptError) {
+        console.error("Encryption or upload failed:", encryptError);
+        alert("Failed to encrypt or upload content.");
+        setIsEncrypting(false);
+        setIsUploading(false);
         setIsCreating(false);
-        return; // Stop form submission
       }
     }
 
@@ -211,6 +191,7 @@ export default function CreateGift() {
 
   const isFormValid =
     formData.receiverAddress &&
+    formData.receiverPublicKey &&
     formData.releaseDate &&
     formData.releaseHour !== "" &&
     formData.releaseMinute !== "" &&
@@ -245,6 +226,20 @@ export default function CreateGift() {
             value={formData.receiverAddress}
             onChange={(e) => setFormData(prev => ({ ...prev, receiverAddress: e.target.value }))}
             placeholder="0x..."
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+        {/* Receiver Public Key */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Receiver Public Key
+          </label>
+          <input
+            type="text"
+            value={formData.receiverPublicKey}
+            onChange={(e) => setFormData(prev => ({ ...prev, receiverPublicKey: e.target.value }))}
+            placeholder="Paste the receiver's public key here"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
