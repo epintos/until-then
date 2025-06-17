@@ -1,8 +1,9 @@
 "use client";
 
 import { chainsToContracts, untilThenV1Abi } from "@/constants";
-import { Calendar, DollarSign, Hash, Tag, TrendingUp } from "lucide-react";
-import { useAccount, useChainId, useReadContract } from "wagmi";
+import { Calendar, DollarSign, Hash, Lock, Tag, TrendingUp } from "lucide-react";
+import { Abi } from "viem";
+import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
 interface Gift {
   id: bigint;
@@ -23,19 +24,58 @@ export default function SentGifts() {
   const untilThenAddress =
     (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
 
-
-  const { data: giftsData } = useReadContract({
+  // Fetch list of gift IDs
+  const { data: giftIdsData } = useReadContract({
     abi: untilThenV1Abi,
     address: untilThenAddress,
-    functionName: "getSenderGifts",
+    functionName: "getSenderGiftsIds",
     args: [address as `0x${string}`],
     query: {
-      enabled: !!address && untilThenAddress !== "0x", // Only enable query if address and contract address are valid
+      enabled: !!address && untilThenAddress !== "0x",
     },
   });
 
-  const gifts = giftsData as Gift[] | undefined;
-  console.log("SentGifts - Gifts Data:", gifts);
+  const giftIds = giftIdsData as bigint[] | undefined;
+  console.log(giftIds);
+
+  // Fetch details for each gift ID
+  const { data: giftsData } = useReadContracts({
+    contracts: (
+      giftIds && giftIds.length > 0
+        ? giftIds.map((id) => ({
+            abi: untilThenV1Abi as Abi,
+            address: untilThenAddress,
+            functionName: "getGiftById",
+            args: [id],
+          }))
+        : []
+    ),
+    query: {
+      enabled: !!giftIds && giftIds.length > 0 && untilThenAddress !== "0x",
+      // Make sure the query is refetched if giftIds change
+      refetchOnWindowFocus: false, // Optional: adjust as needed
+    },
+  });
+
+  const gifts = giftsData
+    ? (giftsData
+        .filter((result) => result.status === "success" && result.result !== undefined)
+        .map((result) => {
+          const gift = result.result as Gift;
+          return {
+            id: gift.id,
+            sender: gift.sender,
+            receiver: gift.receiver,
+            amount: gift.amount,
+            releaseTimestamp: gift.releaseTimestamp,
+            status: gift.status,
+            nftClaimedId: gift.nftClaimedId,
+            isYield: gift.isYield,
+            linkYield: gift.linkYield,
+            contentHash: gift.contentHash,
+          };
+        }) as Gift[])
+    : undefined;
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000);
@@ -134,7 +174,22 @@ export default function SentGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <Hash className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600 font-mono">
-                    {gift.contentHash ? `${gift.contentHash.slice(0, 12)}...` : "No content"}
+                    {gift.contentHash ? (
+                      status === "Pending" ? (
+                        <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                      ) : (
+                        <a
+                          href={`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${gift.contentHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {`${gift.contentHash.slice(0, 12)}...`}
+                        </a>
+                      )
+                    ) : (
+                      "No content"
+                    )}
                   </span>
                 </div>
 
@@ -183,15 +238,6 @@ export default function SentGifts() {
                   <p className="text-sm font-mono text-gray-700">
                     {formatAddress(gift.receiver)}
                   </p>
-                </div>
-
-                {/* Action Button */}
-                <div className="mt-4">
-                  {status === "Claimed" && (
-                    <button className="w-full py-2 px-4 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
-                      View Transaction
-                    </button>
-                  )}
                 </div>
               </div>
             );

@@ -7,8 +7,8 @@ interface ContractsConfig {
 
 export const chainsToContracts: ContractsConfig = {
   11155111: {
-    untilThenV1: "0x15E1CB9F78280D1301f78e98955E7355900c498B",
-    giftNFT: "0xD6dC8c94720BEE353041c6D9A5E9c9cEe1b98b3B"
+    untilThenV1: "0x1f4feC708F7Ff9186e760B1754dCb7927a57E6fd",
+    giftNFT: "0x1F4049fa16602F502aFe74Ae2317413F7b43E885"
   }
 }
 
@@ -309,110 +309,24 @@ export const untilThenV1Abi = [
   },
   {
     "type": "function",
-    "name": "getIPFSConsumer",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getReceiverGifts",
+    "name": "getReceiverGiftsIds",
     "inputs": [
       { "name": "receiver", "type": "address", "internalType": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "tuple[]",
-        "internalType": "struct UntilThenV1.Gift[]",
-        "components": [
-          { "name": "id", "type": "uint256", "internalType": "uint256" },
-          { "name": "amount", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "releaseTimestamp",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftClaimedId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum UntilThenV1.GiftStatus"
-          },
-          { "name": "sender", "type": "address", "internalType": "address" },
-          {
-            "name": "receiver",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "isYield", "type": "bool", "internalType": "bool" },
-          { "name": "linkYield", "type": "bool", "internalType": "bool" },
-          {
-            "name": "contentHash",
-            "type": "string",
-            "internalType": "string"
-          }
-        ]
-      }
+      { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getSenderGifts",
+    "name": "getSenderGiftsIds",
     "inputs": [
       { "name": "sender", "type": "address", "internalType": "address" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "tuple[]",
-        "internalType": "struct UntilThenV1.Gift[]",
-        "components": [
-          { "name": "id", "type": "uint256", "internalType": "uint256" },
-          { "name": "amount", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "releaseTimestamp",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nftClaimedId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum UntilThenV1.GiftStatus"
-          },
-          { "name": "sender", "type": "address", "internalType": "address" },
-          {
-            "name": "receiver",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "isYield", "type": "bool", "internalType": "bool" },
-          { "name": "linkYield", "type": "bool", "internalType": "bool" },
-          {
-            "name": "contentHash",
-            "type": "string",
-            "internalType": "string"
-          }
-        ]
-      }
+      { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
     ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTotalGifts",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
@@ -421,6 +335,19 @@ export const untilThenV1Abi = [
     "inputs": [],
     "outputs": [
       { "name": "", "type": "address", "internalType": "contract GiftNFT" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ipfsFunctionsConsumer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPFSFunctionsConsumer"
+      }
     ],
     "stateMutability": "view"
   },
@@ -456,6 +383,13 @@ export const untilThenV1Abi = [
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "totalGifts",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
   },
   {
     "type": "function",

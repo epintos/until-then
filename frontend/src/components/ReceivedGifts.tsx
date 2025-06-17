@@ -1,74 +1,119 @@
 "use client";
 
-import { Calendar, Clock, DollarSign, Gift, Hash, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { chainsToContracts, untilThenV1Abi } from "@/constants";
+import { Calendar, Clock, DollarSign, Gift, Hash, Lock, Tag, TrendingUp } from "lucide-react";
+import { Abi } from "viem";
+import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
-interface ReceivedGift {
-  id: string;
+interface Gift {
+  id: bigint;
+  amount: bigint;
+  releaseTimestamp: bigint;
+  nftClaimedId: bigint;
+  status: number;
+  sender: string;
+  receiver: string;
+  isYield: boolean;
+  linkYield: boolean;
   contentHash: string;
-  timestamp: Date;
-  hasYield: boolean;
-  yieldType: string;
-  amount: number;
-  senderAddress: string;
-  canRedeem: boolean;
 }
 
-// Mock data for demonstration
-const mockReceivedGifts: ReceivedGift[] = [
-  {
-    id: "received-001",
-    contentHash: "0xabc123...",
-    timestamp: new Date("2024-12-25T10:00:00"), // Past date - can redeem
-    hasYield: true,
-    yieldType: "ETH",
-    amount: 0.8,
-    senderAddress: "0x7890...abcd",
-    canRedeem: true,
-  },
-  {
-    id: "received-002",
-    contentHash: "0xdef456...",
-    timestamp: new Date("2025-08-15T14:30:00"), // Future date - cannot redeem yet
-    hasYield: false,
-    yieldType: "None",
-    amount: 0.3,
-    senderAddress: "0x1357...2468",
-    canRedeem: false,
-  },
-  {
-    id: "received-003",
-    contentHash: "0xghi789...",
-    timestamp: new Date("2024-11-20T09:15:00"), // Past date - can redeem
-    hasYield: true,
-    yieldType: "LINK",
-    amount: 1.2,
-    senderAddress: "0xbdef...9876",
-    canRedeem: true,
-  },
-];
-
 export default function ReceivedGifts() {
-  const [redeeming, setRedeeming] = useState<string | null>(null);
+  const { address } = useAccount();
+  const chainId = useChainId();
+  const untilThenAddress =
+    (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Fetch list of gift IDs
+  const { data: giftIdsData } = useReadContract({
+    abi: untilThenV1Abi,
+    address: untilThenAddress,
+    functionName: "getReceiverGiftsIds",
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!address && untilThenAddress !== "0x",
+    },
+  });
+
+  const giftIds = giftIdsData as bigint[] | undefined;
+
+  // Fetch details for each gift ID
+  const { data: giftsData } = useReadContracts({
+    contracts: (
+      giftIds && giftIds.length > 0
+        ? giftIds.map((id) => ({
+            abi: untilThenV1Abi as Abi,
+            address: untilThenAddress,
+            functionName: "getGiftById",
+            args: [id],
+          }))
+        : []
+    ),
+    query: {
+      enabled: !!giftIds && giftIds.length > 0 && untilThenAddress !== "0x",
+      // Make sure the query is refetched if giftIds change
+      refetchOnWindowFocus: false, // Optional: adjust as needed
+    },
+  });
+
+  const gifts = giftsData
+    ? (giftsData
+        .filter((result) => result.status === "success" && result.result !== undefined)
+        .map((result) => {
+          const gift = result.result as Gift;
+          return {
+            id: gift.id,
+            sender: gift.sender,
+            receiver: gift.receiver,
+            amount: gift.amount,
+            releaseTimestamp: gift.releaseTimestamp,
+            status: gift.status,
+            nftClaimedId: gift.nftClaimedId,
+            isYield: gift.isYield,
+            linkYield: gift.linkYield,
+            contentHash: gift.contentHash,
+          };
+        })
+        .filter((gift) => gift.status !== 2) as Gift[])
+    : undefined;
+
+  const formatDate = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) * 1000);
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false, // Use 24-hour format for consistency
+    };
+    return new Intl.DateTimeFormat('en-GB', options).format(date);
   };
 
-  const handleRedeem = async (giftId: string) => {
-    setRedeeming(giftId);
-    
-    // Simulate redemption process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log("Redeeming gift:", giftId);
-    setRedeeming(null);
-    alert("Gift redeemed successfully! It will appear in your Claimed Gifts.");
+  const getStatus = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Absent";
+      case 1:
+        return "Pending";
+      case 2:
+        return "Claimed";
+      default:
+        return "Invalid";
+    }
   };
 
-  const getTimeUntilRedeem = (timestamp: Date) => {
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const formatAmount = (amount: bigint) => {
+    return Number(amount) / 10 ** 18; // Assuming 18 decimals
+  };
+
+  const getTimeUntilRedeem = (timestamp: bigint) => {
     const now = new Date();
-    const diff = timestamp.getTime() - now.getTime();
+    const diff = Number(timestamp) * 1000 - now.getTime();
     
     if (diff <= 0) return null;
     
@@ -81,6 +126,13 @@ export default function ReceivedGifts() {
     return `${minutes}m`;
   };
 
+  // Placeholder for handleRedeem function (to be implemented with contract interaction)
+  const handleRedeem = async (giftId: string) => {
+    alert(`Simulating redemption for gift ID: ${giftId}`);
+    // In a real application, you would interact with your smart contract here.
+    // Example: const { hash } = await writeContract({ ... });
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -90,7 +142,7 @@ export default function ReceivedGifts() {
         </p>
       </div>
 
-      {mockReceivedGifts.length === 0 ? (
+      {!gifts || gifts.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-gray-400" />
@@ -102,14 +154,16 @@ export default function ReceivedGifts() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {mockReceivedGifts.map((gift) => {
-            const timeUntil = getTimeUntilRedeem(gift.timestamp);
-            
+          {gifts.map((gift) => {
+            const status = getStatus(gift.status);
+            const timeUntil = getTimeUntilRedeem(gift.releaseTimestamp);
+            const canRedeem = status === "Pending" && timeUntil === null; // Can redeem if pending and time is up
+
             return (
               <div
-                key={gift.id}
+                key={gift.id.toString()}
                 className={`bg-white border-2 rounded-lg p-6 shadow-sm transition-all ${
-                  gift.canRedeem 
+                  canRedeem 
                     ? "border-green-200 hover:shadow-lg hover:border-green-300" 
                     : "border-gray-200 hover:shadow-md"
                 }`}
@@ -118,9 +172,9 @@ export default function ReceivedGifts() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">
-                      Gift #{gift.id.split('-')[1]}
+                      Gift #{gift.id.toString()}
                     </h3>
-                    {gift.canRedeem ? (
+                    {canRedeem ? (
                       <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                         Ready to Redeem
                       </span>
@@ -130,7 +184,7 @@ export default function ReceivedGifts() {
                       </span>
                     )}
                   </div>
-                  {gift.canRedeem && (
+                  {canRedeem && (
                     <Gift className="w-5 h-5 text-green-500" />
                   )}
                 </div>
@@ -139,7 +193,30 @@ export default function ReceivedGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <Hash className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600 font-mono">
-                    {gift.contentHash.slice(0, 12)}...
+                    {gift.contentHash ? (
+                      status === "Pending" ? (
+                        <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                      ) : (
+                        <a
+                          href={`https://pink-geographical-primate-420.mypinata.cloud/${gift.contentHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {`${gift.contentHash.slice(0, 12)}...`}
+                        </a>
+                      )
+                    ) : (
+                      "No content"
+                    )}
+                  </span>
+                </div>
+
+                {/* NFT Claimed ID */}
+                <div className="flex items-center gap-2 mb-3">
+                  <Tag className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 font-mono">
+                    {status === "Pending" ? "Not claimed yet" : gift.nftClaimedId.toString()}
                   </span>
                 </div>
 
@@ -147,7 +224,7 @@ export default function ReceivedGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600">
-                    {formatDate(gift.timestamp)}
+                    {formatDate(gift.releaseTimestamp)}
                   </span>
                 </div>
 
@@ -165,12 +242,8 @@ export default function ReceivedGifts() {
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-900 font-medium">
-                    {gift.amount} ETH
-                    {gift.hasYield && (
-                      <span className="text-green-600 text-xs ml-1">
-                        (+yield)
-                      </span>
-                    )}
+                    {formatAmount(gift.amount)}{" "}
+                    {gift.isYield && gift.linkYield ? "LINK" : "ETH"}
                   </span>
                 </div>
 
@@ -178,9 +251,9 @@ export default function ReceivedGifts() {
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600">
-                    {gift.hasYield ? (
+                    {gift.isYield ? (
                       <span className="text-green-600 font-medium">
-                        {gift.yieldType} Yield
+                        {gift.linkYield ? "LINK" : "ETH"} Yield
                       </span>
                     ) : (
                       <span className="text-gray-500">No Yield</span>
@@ -192,60 +265,25 @@ export default function ReceivedGifts() {
                 <div className="pt-3 border-t border-gray-100 mb-4">
                   <p className="text-xs text-gray-500 mb-1">From:</p>
                   <p className="text-sm font-mono text-gray-700">
-                    {gift.senderAddress.slice(0, 6)}...{gift.senderAddress.slice(-4)}
+                    {formatAddress(gift.sender)}
                   </p>
                 </div>
 
                 {/* Action Button */}
                 <div>
-                  {gift.canRedeem ? (
+                  {canRedeem && (
                     <button
-                      onClick={() => handleRedeem(gift.id)}
-                      disabled={redeeming === gift.id}
-                      className={`w-full py-3 px-4 font-medium rounded-lg transition-colors ${
-                        redeeming === gift.id
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-green-600 text-white hover:bg-green-700"
-                      }`}
+                      onClick={() => handleRedeem(gift.id.toString())}
+                      disabled={false} // Adjust based on actual redemption logic
+                      className="w-full py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      {redeeming === gift.id ? "Redeeming..." : "Redeem Gift"}
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-3 px-4 font-medium text-gray-500 bg-gray-100 rounded-lg cursor-not-allowed"
-                    >
-                      {timeUntil ? `Available in ${timeUntil}` : "Time Locked"}
+                      Redeem Gift
                     </button>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Summary Stats */}
-      {mockReceivedGifts.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {mockReceivedGifts.filter(g => g.canRedeem).length}
-            </div>
-            <div className="text-sm text-green-600">Ready to Redeem</div>
-          </div>
-          <div className="bg-yellow-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {mockReceivedGifts.filter(g => !g.canRedeem).length}
-            </div>
-            <div className="text-sm text-yellow-600">Time Locked</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {mockReceivedGifts.reduce((sum, gift) => sum + gift.amount, 0).toFixed(2)} ETH
-            </div>
-            <div className="text-sm text-blue-600">Total Value</div>
-          </div>
         </div>
       )}
     </div>
