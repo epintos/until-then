@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "TSender",
+  title: "Until Then",
 };
 
 export default function RootLayout(props: { children: ReactNode }) {
