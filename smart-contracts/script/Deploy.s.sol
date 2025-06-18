@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 
 import { Script, console } from "forge-std/Script.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { UntilThenV1 } from "src/UntilThenV1.sol";
 import { GiftNFT } from "src/GiftNFT.sol";
@@ -118,6 +119,7 @@ contract DeployAirdropAutomation is Script {
                 avalancheAirdropConfig.ccipAvalancheChainSelector,
                 avalancheAirdropConfig.ccipSourceRouterAddress
             );
+            IERC20(avalancheAirdropConfig.ccipSenderlinkAddress).transfer(address(sender), 20 ether);
         } else {
             sender = RedeemAirdropAutomation(avalancheAirdropConfig.ccipSender);
         }

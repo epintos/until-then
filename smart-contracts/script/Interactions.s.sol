@@ -39,7 +39,7 @@ contract CreateEmptyGift is Script {
 
         vm.startBroadcast(account);
         UntilThenV1(untilThenV1Address).createGift{ value: 0.001 ether }(
-            account, block.timestamp + 1 minutes, hex"", false, 0
+            account, block.timestamp - 1 minutes, hex"", false, 0
         );
         vm.stopBroadcast();
     }
