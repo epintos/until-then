@@ -107,7 +107,7 @@ export default function AppDashboard() {
         <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center">
           <div className="text-xs text-gray-600 mb-1">Weekly Giveaway</div>
           <div className="text-3xl font-extrabold text-blue-700 tracking-tight mb-1">
-            {typeof giveawayWins === 'bigint' ? formatUnits(giveawayWins, 18) : '--'} <span className="text-lg font-bold">ETH</span>
+            {typeof giveawayWins === 'bigint' ? Number(formatUnits(giveawayWins, 18)).toFixed(4) : '--'} <span className="text-lg font-bold">ETH</span>
           </div>
         </div>
       </div>
