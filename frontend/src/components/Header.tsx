@@ -12,7 +12,7 @@ const Header = () => {
         </Link>
       </div>
 
-      <ConnectButton />
+      <ConnectButton showBalance={false} />
     </header>
   );
 };

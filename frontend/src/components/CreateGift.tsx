@@ -1,15 +1,16 @@
 "use client";
 
-import * as EthCrypto from "eth-crypto";
+import { encrypt } from '@metamask/eth-sig-util';
 import { Calendar, DollarSign, Info, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Address, formatEther, parseEther } from "viem";
-import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { chainsToContracts, erc20Abi, untilThenV1Abi } from "../constants";
 
 type YieldOption = "none" | "eth" | "link";
 
 export default function CreateGift() {
+  const chainId = useChainId();
   const { address: connectedAddress } = useAccount();
   const [formData, setFormData] = useState({
     receiverAddress: "",
@@ -39,9 +40,9 @@ export default function CreateGift() {
 
   const { data: linkAllowance, refetch: refetchLinkAllowance } = useReadContract({
     abi: erc20Abi,
-    address: chainsToContracts[11155111].linkToken as Address,
+    address: chainsToContracts[chainId].linkToken as Address,
     functionName: "allowance",
-    args: [(connectedAddress || "0x0") as Address, chainsToContracts[11155111].untilThenV1 as Address],
+    args: [(connectedAddress || "0x0") as Address, chainsToContracts[chainId].aaveYieldManager as Address],
     query: {
       enabled: connectedAddress && formData.yieldOption === "link",
     },
@@ -103,9 +104,9 @@ export default function CreateGift() {
     try {
       approveLinkWrite({
         abi: erc20Abi,
-        address: chainsToContracts[11155111].linkToken as Address,
+        address: chainsToContracts[chainId].linkToken as Address,
         functionName: "approve",
-        args: [chainsToContracts[11155111].untilThenV1 as Address, parseEther(formData.amount)],
+        args: [chainsToContracts[chainId].aaveYieldManager as Address, parseEther(formData.amount)],
       });
     } catch (error) {
       console.error("Error approving LINK:", error);
@@ -127,22 +128,23 @@ export default function CreateGift() {
         if (!receiverPublicKey) throw new Error("Receiver public key is required for encryption.");
 
         const fileText = await uploadedFile.text();
-        const encrypted = await EthCrypto.encryptWithPublicKey(receiverPublicKey, fileText);
-        const encryptedString = EthCrypto.cipher.stringify(encrypted);
-
+        // Encrypt using MetaMask's public encryption key
+        const encrypted = encrypt({
+          publicKey: receiverPublicKey,
+          data: fileText,
+          version: 'x25519-xsalsa20-poly1305',
+        });
+        const encryptedString = Buffer.from(JSON.stringify(encrypted), 'utf8').toString('hex');
         setIsEncrypting(false);
         setIsUploading(true);
-
         const response = await fetch("/api/upload-private", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ encryptedContent: encryptedString }),
+          body: JSON.stringify({ encryptedContent: encryptedString, sender: connectedAddress, timestamp: new Date().toISOString() }),
         });
-
         if (!response.ok) {
           throw new Error("Failed to upload content to Pinata.");
         }
-
         const data = await response.json();
         currentContentHash = data.cid;
         setContentHash(data.cid);
@@ -171,7 +173,7 @@ export default function CreateGift() {
 
       createGiftWrite({
         abi: untilThenV1Abi,
-        address: chainsToContracts[11155111].untilThenV1 as Address,
+        address: chainsToContracts[chainId].untilThenV1 as Address,
         functionName: "createGift",
         args: [
           receiverAddressAsAddress, 

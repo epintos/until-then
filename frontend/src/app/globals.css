@@ -91,3 +91,7 @@ button:active:not(:disabled) {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+div[data-testid="rk-connect-modal-info"] {
+  display: none !important;
+}

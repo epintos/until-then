@@ -8,15 +8,22 @@ const pinata = new PinataSDK({
 
 export async function POST(request: Request) {
   try {
-    const { encryptedContent } = await request.json();
+    const { encryptedContent, sender, timestamp } = await request.json();
 
     if (!encryptedContent) {
       return NextResponse.json({ error: "No encrypted content provided" }, { status: 400 });
     }
 
     const result = await pinata.upload.private.json(
-      { encryptedContent }
+      { encryptedContent, sender, timestamp }
     );
+
+    await pinata.groups.private.addFiles({
+      groupId: process.env.PINATA_PUBLIC_GROUP_ID!,
+      files: [
+        result.id
+      ],
+    });
 
     return NextResponse.json({ cid: result.cid }, { status: 200 });
   } catch (error) {

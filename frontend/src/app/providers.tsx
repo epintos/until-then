@@ -12,7 +12,7 @@ export function Providers(props: { children: ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
+        <RainbowKitProvider modalSize="compact">
           {props.children}{" "}
         </RainbowKitProvider>
       </QueryClientProvider>

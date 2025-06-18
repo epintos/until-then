@@ -3,6 +3,7 @@ interface ContractsConfig {
     untilThenV1: string,
     giftNFT: string,
     linkToken: string,
+    aaveYieldManager: string,
   }
 }
 
@@ -11,6 +12,7 @@ export const chainsToContracts: ContractsConfig = {
     untilThenV1: "0x1f4feC708F7Ff9186e760B1754dCb7927a57E6fd",
     giftNFT: "0x1F4049fa16602F502aFe74Ae2317413F7b43E885",
     linkToken: "0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5", // AAVE LINK
+    aaveYieldManager: "0xd39A3a6cB80cE9e1c000027EF5f515Df6ed393df"
   }
 }
 

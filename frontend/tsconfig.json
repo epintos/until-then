@@ -26,17 +26,28 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "disableSourceOfProjectReferenceRedirect": true,
+    "disableSizeLimit": true,
+    "exactOptionalPropertyTypes": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": false,
+    "noUncheckedIndexedAccess": false,
+    "preserveWatchOutput": false,
+    "useDefineForClassFields": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    "src/utils/**/*.ts",
-    "out/types/**/*.ts"
+    "src/utils/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    "out",
+    "dist"
   ]
 }

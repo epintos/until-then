@@ -1,8 +1,6 @@
 "use client";
 
 
-import * as secp256k1 from '@noble/secp256k1';
-import { ethers, getBytes, hashMessage, hexlify } from 'ethers';
 import { Crown, Gift, Inbox, Send } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -27,24 +25,12 @@ export default function AppDashboard() {
     setError("");
     try {
       if (!window.ethereum || !address) throw new Error("Wallet not connected");
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const message = `Sign this message to generate your public key for Until Then.\nAddress: ${address}`;
-      const signature = await signer.signMessage(message);
-      const messageHash = hashMessage(message); // 0x-prefixed hex string
-      const sigBytes = getBytes(signature);
-      const r = sigBytes.slice(0, 32);
-      const s = sigBytes.slice(32, 64);
-      const v = sigBytes[64];
-      const recoveryParam = v - 27;
-      if (recoveryParam !== 0 && recoveryParam !== 1) {
-        throw new Error('Invalid recovery param');
-      }
-      const compactSig = new Uint8Array([...r, ...s]);
-      const sigObj = secp256k1.Signature.fromCompact(compactSig).addRecoveryBit(recoveryParam);
-      const pubKey = sigObj.recoverPublicKey(getBytes(messageHash));
-      const pubKeyHex = hexlify(pubKey.toRawBytes(false));
-      setPublicKey(pubKeyHex);
+      // Use MetaMask's eth_getEncryptionPublicKey
+      const publicKey = await window.ethereum.request({
+        method: 'eth_getEncryptionPublicKey',
+        params: [address],
+      });
+      setPublicKey(publicKey);
       setCopied(false);
     } catch (err: any) {
       if (
