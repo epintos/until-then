@@ -1,8 +1,8 @@
 "use client";
 
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
-import { Download, Hash, Lock } from "lucide-react";
-import { useMemo } from "react";
+import { Hash, Lock } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
@@ -25,10 +25,7 @@ interface NFTAttribute {
 }
 
 interface NFTMetadata {
-  name: string;
-  description: string;
   image: string;
-  animation_url?: string;
   contentHash: string;
 }
 
@@ -133,10 +130,7 @@ export default function ClaimedGifts() {
           const imageUrlFromMetadata = parsedMetadata.image.replace("ipfs://", "https://pink-geographical-primate-420.mypinata.cloud/ipfs/");
 
           metadata = {
-            name: parsedMetadata.name,
-            description: parsedMetadata.description,
             image: imageUrlFromMetadata,
-            animation_url: parsedMetadata.animation_url,
             contentHash: contentHashFromAttributes,
           };
         } catch (error) {
@@ -152,6 +146,57 @@ export default function ClaimedGifts() {
     }
     return nfts;
   }, [gifts, tokenURIs]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<string | null>(null);
+  const [modalTitle, setModalTitle] = useState<string>("");
+  const [decrypting, setDecrypting] = useState(false);
+
+  async function fetchAndDecryptContent(contentHash: string, giftId: bigint) {
+    setDecrypting(true);
+    try {
+      const res = await fetch(`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${contentHash}`);
+      if (!res.ok) throw new Error("Failed to fetch content from IPFS");
+      const data = await res.json();
+      const encryptedContent = data.encryptedContent;
+      if (!window.ethereum || !address) throw new Error("MetaMask not available or wallet not connected");
+      // Decrypt using MetaMask
+      const decrypted = await window.ethereum.request({
+        method: 'eth_decrypt',
+        params: [encryptedContent, address],
+      });
+      setDecrypting(false);
+      return decrypted;
+    } catch (err: any) {
+      setDecrypting(false);
+      alert(err.message || "Failed to decrypt content");
+      return null;
+    }
+  }
+
+  async function handleShowContent(contentHash: string, giftId: bigint) {
+    const decrypted = await fetchAndDecryptContent(contentHash, giftId);
+    if (decrypted) {
+      setModalTitle(`Gift #${giftId} Content`);
+      setModalContent(decrypted);
+      setModalOpen(true);
+    }
+  }
+
+  async function handleDownloadContent(contentHash: string, giftId: bigint) {
+    const decrypted = await fetchAndDecryptContent(contentHash, giftId);
+    if (decrypted) {
+      const blob = new Blob([decrypted], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gift-id-${giftId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }
 
   const handleDownload = (contentHash: string) => {
     if (contentHash) {
@@ -243,25 +288,48 @@ export default function ClaimedGifts() {
                           </a>
                         )
                       ) : (
-                        "No content"
+                        <span>Decryption in progress</span>
                       )}
                     </span>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-4">
+                  <div className="mt-4 flex gap-2">
                     <button
-                      onClick={() => handleDownload(contentHash)}
-                      className="w-full py-2 px-4 text-sm bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-1"
+                      onClick={() => handleShowContent(contentHash, nft.id)}
+                      disabled={!contentHash || decrypting}
+                      className="w-1/2 py-2 px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
                     >
-                      <Download className="w-4 h-4" />
-                      Download Content
+                      Show content
+                    </button>
+                    <button
+                      onClick={() => handleDownloadContent(contentHash, nft.id)}
+                      disabled={!contentHash || decrypting}
+                      className="w-1/2 py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                    >
+                      Download content
                     </button>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal for showing decrypted content */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setModalOpen(false)}
+            >
+              ×
+            </button>
+            <h2 className="text-lg font-bold mb-4">{modalTitle}</h2>
+            <pre className="whitespace-pre-wrap break-words text-gray-800 bg-gray-50 rounded p-4 max-h-96 overflow-auto">{modalContent}</pre>
+          </div>
         </div>
       )}
     </div>
