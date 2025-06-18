@@ -11,12 +11,12 @@ interface ContractsConfig {
 
 export const chainsToContracts: ContractsConfig = {
   11155111: {
-    untilThenV1: "0x5f118Ac54332e9E730de35967E29d53ced8D8bf6",
-    giftNFT: "0x1Fe8293827284170B0B0108e19F8Fa7194Fd3947",
+    untilThenV1: "0xefA2408BDc98e783440A1B27d72827cec8A399d8",
+    giftNFT: "0x2F901523DE07a64A05Eb65028Fb7BBcB991681f4",
     linkToken: "0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5", // AAVE LINK
-    aaveYieldManager: "0xd39A3a6cB80cE9e1c000027EF5f515Df6ed393df",
-    giveaway: "0xD206eb77CE194d863Eecce94655B715F9A618420",
-    redeemAirdropAutomation: "0x9af12B6Efac30F637203FC8E2f68F9075A2461AB"
+    aaveYieldManager: "0x9bC2359CF283BF2B91b96aD9491d9A8Fc1f13123",
+    giveaway: "0x01927971547Ec6771e1fc0A9CAdCfA85F9aCCf03",
+    redeemAirdropAutomation: "0x30DCDaFD1B0B2C702FE67d1bF0f61821970BB7aA"
   }
 }
 

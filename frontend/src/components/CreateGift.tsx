@@ -206,7 +206,7 @@ export default function CreateGift() {
         releaseTimestamp,
         currentContentHash || "",
         formData.yieldOption !== "none",
-        amountInWei,
+        formData.yieldOption === "link" ? amountInWei: 0,
       ];
       console.log("Call args:", args);
       setButtonState('creating');
@@ -241,7 +241,9 @@ export default function CreateGift() {
     formData.receiverPublicKey.trim() &&
     formData.releaseDate.trim() &&
     formData.amount.trim() &&
-    parseFloat(formData.amount.trim()) > 0;
+    parseFloat(formData.amount.trim()) > 0 &&
+    // For no yield and eth yield, ensure amount is at least the total fees
+    (formData.yieldOption === "link" || parseFloat(formData.amount.trim()) >= fees.total);
 
   const isLinkApproved = 
     linkAllowance !== undefined && 
@@ -436,6 +438,14 @@ export default function CreateGift() {
               </div>
               {(formData.yieldOption === "eth" || formData.yieldOption === "none") && (
                 <p className="text-xs text-gray-500">Fees will be deducted from this amount.</p>
+              )}
+              {/* Show error if amount is insufficient for fees */}
+              {(formData.yieldOption === "none" || formData.yieldOption === "eth") && 
+               parseFloat(formData.amount) > 0 && 
+               parseFloat(formData.amount) < fees.total && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                  ⚠️ Amount must be at least {fees.total.toFixed(6)} ETH to cover fees
+                </div>
               )}
               {formData.yieldOption === "link" && (
                 <div className="flex justify-between text-blue-600 font-medium mt-2">
