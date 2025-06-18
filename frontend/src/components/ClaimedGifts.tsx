@@ -29,9 +29,11 @@ interface NFTMetadata {
   contentHash: string;
 }
 
-interface ClaimedNFT extends Gift {
+interface ClaimedNFT {
+  id: bigint;
   tokenURI: string;
   metadata?: NFTMetadata;
+  gift: Gift;
 }
 
 export default function ClaimedGifts() {
@@ -99,7 +101,6 @@ export default function ClaimedGifts() {
       refetchOnWindowFocus: false,
     },
   });
-
   // Memoize tokenURIs from raw data
   const tokenURIs = useMemo(() => {
     if (!tokenURIDataRaw) return undefined;
@@ -117,16 +118,15 @@ export default function ClaimedGifts() {
     }
 
     const nfts: ClaimedNFT[] = [];
-    for (const gift of gifts) {
-      const tokenUri = tokenURIs.find((uri) => uri.includes(gift.nftClaimedId.toString()));
+    for (let i = 0; i < gifts.length; i++) {
+      const gift = gifts[i];
+      const tokenUri = tokenURIs[i];
       let metadata: NFTMetadata | undefined;
 
       if (tokenUri) {
         try {
           const parsedMetadata = JSON.parse(tokenUri);
           const contentHashFromAttributes = parsedMetadata.attributes.find((attr: NFTAttribute) => attr.trait_type === "contentHash")?.value || "";
-
-          // Use the image URL from parsedMetadata directly
           const imageUrlFromMetadata = parsedMetadata.image.replace("ipfs://", "https://pink-geographical-primate-420.mypinata.cloud/ipfs/");
 
           metadata = {
@@ -139,9 +139,10 @@ export default function ClaimedGifts() {
       }
 
       nfts.push({
-        ...gift,
         tokenURI: tokenUri || "",
         metadata,
+        id: gift.nftClaimedId,
+        gift,
       });
     }
     return nfts;
@@ -236,11 +237,11 @@ export default function ClaimedGifts() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {claimedNFTs.map((nft) => {
-            const imageUrl = nft.metadata?.image.replace("ipfs://", "https://pink-geographical-primate-420.mypinata.cloud/ipfs/");
-            const contentHash = nft.metadata?.contentHash || nft.contentHash;
+            const imageUrl = nft.metadata?.image;
+            const contentHash = nft.metadata?.contentHash || "";
             return (
               <div
-                key={nft.id.toString()}
+                key={nft.gift.id.toString()}
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all group"
               >
                 {/* NFT Image */}
@@ -248,7 +249,7 @@ export default function ClaimedGifts() {
                   {imageUrl ? (
                     <img
                       src={imageUrl}
-                      alt={`Gift NFT ${nft.nftClaimedId}`}
+                      alt={`Gift NFT ${nft.gift.id}`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -262,11 +263,14 @@ export default function ClaimedGifts() {
                 <div className="p-4">
                   <div className="mb-3">
                     <h3 className="font-semibold text-gray-900 mb-1">
-                      Gift ID: #{nft.id.toString()}
+                      Gift ID: #{nft.gift.id.toString()}
                     </h3>
+                    <p className="text-sm text-gray-600 mb-1">
+                      NFT ID: #{nft.id.toString()}
+                    </p>
                     <p className="text-xs text-gray-500 mb-1">Available From:</p>
                     <p className="text-sm text-gray-700">
-                      {formatDate(nft.releaseTimestamp)}
+                      {formatDate(nft.gift.releaseTimestamp)}
                     </p>
                   </div>
 
@@ -275,7 +279,7 @@ export default function ClaimedGifts() {
                     <Hash className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-600 font-mono">
                       {contentHash ? (
-                        nft.status === 1 ? (
+                        nft.gift.status === 1 ? (
                           <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
                         ) : (
                           <a
@@ -288,7 +292,7 @@ export default function ClaimedGifts() {
                           </a>
                         )
                       ) : (
-                        <span>Decryption in progress</span>
+                        <span>Decryption pending</span>
                       )}
                     </span>
                   </div>
