@@ -67,7 +67,7 @@ export default function AppDashboard() {
       <div className="mt-8">
         <div className="font-semibold text-gray-800 mb-1">Share your public key</div>
         <div className="text-xs text-gray-600 mb-2">
-          Share your public key with the sender so they can encrypt the gift content. Only you will be able to decrypt and read the message after claiming the gift.
+          Share your Metamask public key with the sender so they can encrypt the gift content. Only you will be able to decrypt and read the message after claiming the gift.
         </div>
         {publicKey ? (
           <div className="flex flex-col gap-2">

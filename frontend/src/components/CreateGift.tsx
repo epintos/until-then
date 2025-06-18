@@ -4,7 +4,7 @@ import { encrypt } from '@metamask/eth-sig-util';
 import { Calendar, Info, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Address, formatEther, parseEther } from "viem";
-import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { chainsToContracts, erc20Abi, untilThenV1Abi } from "../constants";
 
 type YieldOption = "none" | "eth" | "link";
@@ -28,9 +28,12 @@ export default function CreateGift() {
   const [giftCreated, setGiftCreated] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [buttonState, setButtonState] = useState<'idle' | 'creating' | 'created' | 'error'>('idle');
+  const [isGiftTx, setIsGiftTx] = useState(false);
   const { isSuccess, isError, error: txError } = useWaitForTransactionReceipt({ hash: txHash });
+  const [approveLinkState, setApproveLinkState] = useState<'idle' | 'approving' | 'approved' | 'error'>('idle');
 
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId });
 
   const { data: linkAllowance, refetch: refetchLinkAllowance } = useReadContract({
     abi: erc20Abi,
@@ -51,24 +54,27 @@ export default function CreateGift() {
 
   useEffect(() => {
     console.log('isSuccess', isSuccess, 'isError', isError, 'buttonState', buttonState);
-    if (isSuccess) {
+    if (isGiftTx && isSuccess) {
       setButtonState('created');
-      // Reset form fields after success
-      setFormData({
+      // Reset form fields after successful gift creation only
+      setFormData((prev) => ({
+        ...prev,
         receiverAddress: "",
         receiverPublicKey: "",
         releaseDate: "",
         amount: "",
-        yieldOption: "none",
-      });
+        // Do not reset yieldOption so user can keep their selection
+      }));
       setUploadedFile(null);
       setTimeout(() => setButtonState('idle'), 5000);
-    } else if (isError) {
+      setIsGiftTx(false);
+    } else if (isGiftTx && isError) {
       setButtonState('error');
       if (txError) console.error('Transaction failed:', txError);
       setTimeout(() => setButtonState('idle'), 5000);
+      setIsGiftTx(false);
     }
-  }, [isSuccess, isError, txError]);
+  }, [isSuccess, isError, txError, isGiftTx]);
 
   const calculateFees = () => {
     const amountAsNumber = parseFloat(formData.amount) || 0; // This is the input as a number (e.g., 0.001 or 10).
@@ -115,19 +121,35 @@ export default function CreateGift() {
 
   const handleApproveLink = async () => {
     if (!connectedAddress || !formData.amount) return;
-
+    if (!publicClient) {
+      setApproveLinkState('error');
+      alert('No public client available for transaction confirmation.');
+      return;
+    }
     try {
-      writeContractAsync({
+      setApproveLinkState('approving');
+      const txHash = await writeContractAsync({
         abi: erc20Abi,
         address: chainsToContracts[chainId].linkToken as Address,
         functionName: "approve",
         args: [chainsToContracts[chainId].aaveYieldManager as Address, parseEther(formData.amount)],
       });
+      // Wait for the transaction to be mined using publicClient
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      setApproveLinkState('approved');
+      // Force re-fetch of allowance
+      refetchLinkAllowance();
     } catch (error) {
+      setApproveLinkState('error');
       console.error("Error approving LINK:", error);
       alert("Failed to approve LINK.");
     }
   };
+
+  // Reset approveLinkState if amount or address changes
+  useEffect(() => {
+    setApproveLinkState('idle');
+  }, [formData.amount, connectedAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,11 +226,13 @@ export default function CreateGift() {
         value: formData.yieldOption === "link" ? parseEther(fees.total.toString()) : amountInWei,
       });
       setTxHash(tx);
+      setIsGiftTx(true);
       console.log("Set txHash:", tx);
     } catch (error) {
       setButtonState('error');
       console.error("Error sending transaction:", error);
       setTimeout(() => setButtonState('idle'), 5000);
+      setIsGiftTx(false);
     }
   };
 
@@ -260,7 +284,7 @@ export default function CreateGift() {
         {/* Receiver Public Key */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Receiver Public Key
+            Receiver Metamask Public Key. This will be used to encrypt the content, so the receiver only can read it.
           </label>
           <input
             type="text"
@@ -359,9 +383,15 @@ export default function CreateGift() {
               min="0"
               value={formData.amount}
               onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-              placeholder="e.g., 0.001 or 10"
+              placeholder="e.g., 0.001 ETH or 10 LINK"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                  e.preventDefault();
+                }
+              }}
+              onWheel={e => e.target instanceof HTMLElement && e.target.blur()}
             />
           </div>
         </div>
@@ -424,10 +454,21 @@ export default function CreateGift() {
           <button
             type="button"
             onClick={handleApproveLink}
-            disabled={isCreating}
-            className="w-full py-3 px-4 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75"
+            disabled={isCreating || approveLinkState === 'approving' || approveLinkState === 'approved'}
+            className={`w-full py-3 px-4 font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75 flex items-center justify-center gap-2
+              ${approveLinkState === 'approved' ? 'bg-green-600 text-white' :
+                approveLinkState === 'approving' ? 'bg-yellow-500 text-white' :
+                'bg-yellow-500 text-white hover:bg-yellow-600'}`}
           >
-            {isCreating ? "Approving LINK..." : "Approve LINK"}
+            {approveLinkState === 'approving' && (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            )}
+            {approveLinkState === 'approved' ? 'LINK approved' :
+              approveLinkState === 'approving' ? 'Approving LINK...' :
+              'Approve LINK'}
           </button>
         )}
 

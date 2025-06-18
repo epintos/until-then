@@ -166,7 +166,7 @@ export default function ReceivedGifts() {
         functionName: "claimGift",
         args: [giftId],
       });
-      setModalMessage('Waiting for GiftClaimed event...');
+      setModalMessage('Waiting for NFT to be minted...');
       // 2. Wait for GiftClaimed event
       const provider = new BrowserProvider(window.ethereum);
       const contract = new Contract(untilThenAddress, untilThenV1Abi, provider);
@@ -181,7 +181,7 @@ export default function ReceivedGifts() {
       // 3. If contentHash exists, wait for ContentHashUpdated
       if (contentHash) {
         setModalStep('decrypting');
-        setModalMessage('Waiting for ContentHashUpdated event... This could take up to 5 minutes.');
+        setModalMessage('Waiting for content to be decrypted... This can take up to 5 minutes.');
         const giftNFTAddr = await fetchGiftNFTAddress();
         if (!giftNFTAddr) throw new Error('No GiftNFT address');
         const giftNFTContract = new Contract(giftNFTAddr, giftNFTAbi, provider);
