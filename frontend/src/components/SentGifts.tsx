@@ -36,7 +36,6 @@ export default function SentGifts() {
   });
 
   const giftIds = giftIdsData as bigint[] | undefined;
-  console.log(giftIds);
 
   // Fetch details for each gift ID
   const { data: giftsData } = useReadContracts({

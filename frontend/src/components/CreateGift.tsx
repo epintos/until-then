@@ -451,7 +451,7 @@ export default function CreateGift() {
             buttonState === 'error' ? "Transaction Failed" :
             buttonState === 'creating' ? "Creating Gift..." :
             isEncrypting ? "Encrypting Content..." : 
-            isUploading ? "Uploading Content..." :
+            isUploading ? "Uploading Encrypted Content..." :
             "Create Gift"}
         </button>
 

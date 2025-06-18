@@ -1,9 +1,11 @@
 "use client";
 
-import { chainsToContracts, untilThenV1Abi } from "@/constants";
+import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
+import { BrowserProvider, Contract } from "ethers";
 import { Calendar, Clock, DollarSign, Gift, Hash, Lock, TrendingUp } from "lucide-react";
+import { useState } from "react";
 import { Abi } from "viem";
-import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
 interface Gift {
   id: bigint;
@@ -126,12 +128,81 @@ export default function ReceivedGifts() {
     return `${minutes}m`;
   };
 
-  // Placeholder for handleRedeem function (to be implemented with contract interaction)
-  const handleRedeem = async (giftId: string) => {
-    alert(`Simulating redemption for gift ID: ${giftId}`);
-    // In a real application, you would interact with your smart contract here.
-    // Example: const { hash } = await writeContract({ ... });
-  };
+  const { writeContractAsync } = useWriteContract();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState<'redeeming' | 'decrypting' | 'done'>('redeeming');
+  const [modalMessage, setModalMessage] = useState<string>("");
+  const [modalError, setModalError] = useState<string>("");
+
+  // Get the GiftNFT address from the contract (if needed)
+  const [giftNFTAddress, setGiftNFTAddress] = useState<string | null>(null);
+
+  // Helper to get the GiftNFT address
+  async function fetchGiftNFTAddress() {
+    if (giftNFTAddress) return giftNFTAddress;
+    if (!untilThenAddress) return null;
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(untilThenAddress, untilThenV1Abi, provider);
+      const addr = await contract.giftNFTContract();
+      setGiftNFTAddress(addr);
+      return addr;
+    } catch {
+      setModalError("Failed to get GiftNFT address");
+      return null;
+    }
+  }
+
+  async function handleRedeem(giftId: bigint, contentHash: string) {
+    setModalOpen(true);
+    setModalStep('redeeming');
+    setModalMessage('Waiting for on-chain confirmation...');
+    setModalError("");
+    try {
+      // 1. Call claimGift
+      await writeContractAsync({
+        abi: untilThenV1Abi,
+        address: untilThenAddress,
+        functionName: "claimGift",
+        args: [giftId],
+      });
+      setModalMessage('Waiting for GiftClaimed event...');
+      // 2. Wait for GiftClaimed event
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(untilThenAddress, untilThenV1Abi, provider);
+      const filter = contract.filters.GiftClaimed(null, giftId);
+      const nftId = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timed out waiting for GiftClaimed event')), 120000);
+        contract.once(filter, (...args) => {
+          clearTimeout(timeout);
+          resolve(args[3]);
+        });
+      });
+      // 3. If contentHash exists, wait for ContentHashUpdated
+      if (contentHash) {
+        setModalStep('decrypting');
+        setModalMessage('Waiting for ContentHashUpdated event... This could take up to 5 minutes.');
+        const giftNFTAddr = await fetchGiftNFTAddress();
+        if (!giftNFTAddr) throw new Error('No GiftNFT address');
+        const giftNFTContract = new Contract(giftNFTAddr, giftNFTAbi, provider);
+        const giftNFTFilter = giftNFTContract.filters.ContentHashUpdated(nftId);
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Timed out waiting for ContentHashUpdated event (5 minutes)')), 300000);
+          giftNFTContract.once(giftNFTFilter, () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+        setModalMessage('Content hash updated!');
+      }
+      setModalStep('done');
+      setModalMessage('Gift successfully redeemed!');
+      setTimeout(() => setModalOpen(false), 3000);
+    } catch (error) {
+      setModalError(error instanceof Error ? error.message : 'Redemption failed');
+      setModalStep('done');
+    }
+  }
 
   return (
     <div>
@@ -265,8 +336,8 @@ export default function ReceivedGifts() {
                 <div>
                   {canRedeem && (
                     <button
-                      onClick={() => handleRedeem(gift.id.toString())}
-                      disabled={false} // Adjust based on actual redemption logic
+                      onClick={() => handleRedeem(gift.id, gift.contentHash)}
+                      disabled={modalOpen}
                       className="w-full py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                       Redeem Gift
@@ -276,6 +347,33 @@ export default function ReceivedGifts() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal for redeeming progress */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setModalOpen(false)}
+            >
+              ×
+            </button>
+            <h2 className="text-lg font-bold mb-4">Redeeming Gift</h2>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${modalStep === 'redeeming' ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                <span>Claiming Gift and creating NFT</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-3 h-3 rounded-full ${modalStep === 'decrypting' ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                <span>Decrypting Content</span>
+              </div>
+            </div>
+            <div className="mb-2 text-gray-700">{modalMessage}</div>
+            {modalError && <div className="text-red-600 font-semibold">{modalError}</div>}
+          </div>
         </div>
       )}
     </div>

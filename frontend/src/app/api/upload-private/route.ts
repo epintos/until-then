@@ -20,10 +20,14 @@ export async function POST(request: Request) {
       type: "application/json",
     });
 
-    const result = await pinata.upload.private.file(file);
+    const result = await pinata.upload.private.file(file, {
+      metadata: {
+        name: `${timestamp}-${sender}.json`
+      }
+    });
 
     await pinata.groups.private.addFiles({
-      groupId: process.env.PINATA_PUBLIC_GROUP_ID!,
+      groupId: process.env.PINATA_PRIVATE_GROUP_ID!,
       files: [
         result.id
       ],
