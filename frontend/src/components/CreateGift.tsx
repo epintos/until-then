@@ -328,8 +328,8 @@ export default function CreateGift() {
           <div className="space-y-3">
             {[
               { value: "none", label: "No Yield", desc: "Gift amount stays the same" },
-              { value: "eth", label: "ETH Staking", desc: "Earn staking rewards (~4% APY)" },
-              { value: "link", label: "LINK Token", desc: "Convert to LINK for potential gains" },
+              { value: "eth", label: "ETH Yileld", desc: "Supply ETH to AAVE and earn APY" },
+              { value: "link", label: "LINK Yield", desc: "Supply LINK to AAVE and earn APY" },
             ].map((option) => (
               <label key={option.value} className="flex items-start gap-3 cursor-pointer">
                 <input
