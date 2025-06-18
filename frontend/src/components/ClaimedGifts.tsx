@@ -4,13 +4,15 @@ import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { Hash, Lock } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Abi } from "viem";
+import { Abi, formatEther, formatUnits } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
 interface Gift {
   id: bigint;
   amount: bigint;
+  amountClaimed: bigint;
   releaseTimestamp: bigint;
+  claimedTimestamp: bigint;
   nftClaimedId: bigint;
   status: number;
   sender: string;
@@ -267,52 +269,64 @@ export default function ClaimedGifts() {
                     <p className="text-sm text-gray-600 mb-1">
                       NFT ID: #{nft.id.toString()}
                     </p>
-                    <p className="text-xs text-gray-500 mb-1">Available From:</p>
+                    <p className="text-xs text-gray-500 mb-1">Claimed on:</p>
+                    <p className="text-sm text-gray-700 mb-2">
+                      {formatDate(nft.gift.claimedTimestamp || nft.gift.releaseTimestamp)}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1">Amount Sent:</p>
+                    <p className="text-sm text-gray-700 mb-1">
+                      {nft.gift.linkYield ? formatUnits(nft.gift.amount, 18) : formatEther(nft.gift.amount)} {nft.gift.linkYield ? 'LINK' : 'ETH'}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1">Amount Claimed:</p>
                     <p className="text-sm text-gray-700">
-                      {formatDate(nft.gift.releaseTimestamp)}
+                      {nft.gift.linkYield ? formatUnits(nft.gift.amountClaimed || BigInt(0), 18) : formatEther(nft.gift.amountClaimed || BigInt(0))} {nft.gift.linkYield ? 'LINK' : 'ETH'}
                     </p>
                   </div>
 
-                  {/* Content Hash */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <Hash className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600 font-mono">
-                      {contentHash ? (
-                        nft.gift.status === 1 ? (
-                          <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                  {/* Content Hash - Only show if gift has contentHash */}
+                  {nft.gift.contentHash && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <Hash className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600 font-mono">
+                        {nft.metadata?.contentHash ? (
+                          nft.gift.status === 1 ? (
+                            <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
+                          ) : (
+                            <a
+                              href={`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${nft.metadata.contentHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {`${nft.metadata.contentHash.slice(0, 12)}...`}
+                            </a>
+                          )
                         ) : (
-                          <a
-                            href={`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${contentHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {`${contentHash.slice(0, 12)}...`}
-                          </a>
-                        )
-                      ) : (
-                        <span>Decryption pending</span>
-                      )}
-                    </span>
-                  </div>
+                          <span>Decryption pending</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
 
-                  {/* Action Buttons */}
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => handleShowContent(contentHash, nft.id)}
-                      disabled={!contentHash || decrypting}
-                      className="w-1/2 py-2 px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
-                    >
-                      Show content
-                    </button>
-                    <button
-                      onClick={() => handleDownloadContent(contentHash, nft.id)}
-                      disabled={!contentHash || decrypting}
-                      className="w-1/2 py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
-                    >
-                      Download content
-                    </button>
-                  </div>
+                  {/* Action Buttons - Only show if gift has contentHash */}
+                  {nft.gift.contentHash && (
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => handleShowContent(nft.metadata?.contentHash || "", nft.id)}
+                        disabled={!nft.metadata?.contentHash || decrypting}
+                        className="w-1/2 py-2 px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                      >
+                        Show content
+                      </button>
+                      <button
+                        onClick={() => handleDownloadContent(nft.metadata?.contentHash || "", nft.id)}
+                        disabled={!nft.metadata?.contentHash || decrypting}
+                        className="w-1/2 py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                      >
+                        Download content
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

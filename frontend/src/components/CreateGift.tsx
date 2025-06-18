@@ -256,7 +256,7 @@ export default function CreateGift() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Gift</h1>
         <p className="text-gray-600">
-          Set up a time-locked gift to be delivered in the future
+          Set up a time-locked gift to be delivered in a specific date
         </p>
       </div>
 
@@ -278,8 +278,11 @@ export default function CreateGift() {
         {/* Receiver Public Key */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Receiver Metamask Public Key. This will be used to encrypt the content, so the receiver only can read it.
+            Receiver Metamask Public Key
           </label>
+          <p className="text-xs text-gray-500 mb-2">
+            This will be used to encrypt the content, so the receiver only can read it.
+          </p>
           <input
             type="text"
             value={formData.receiverPublicKey}
@@ -412,7 +415,7 @@ export default function CreateGift() {
                     {/* No amount displayed when yield is chosen, only explanation */}
                   </div>
                   <p className="text-xs text-gray-500 mb-2">
-                    When the yield option is chosen, a 10% of the amount + yield will be taken. If that is less, then 0.0001 ether is taken for eth yield and 0.05 ether for link yield.
+                  When the yield option is selected, a fee is applied: 10% of the earned yield or a minimum of 0.001 ETH (for ETH yield) or 0.05 LINK (for LINK yeld), whichever is greater.
                   </p>
                 </>
               ) : (
