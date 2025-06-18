@@ -17,6 +17,7 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
     error RedeemAirdropAutomation__InsufficientBalance(address linkToken, uint256 linkBalance, uint256 ccipFee);
     error RedeemAirdropAutomation__ReceiverCannotBeZeroAddress();
     error RedeemAirdropAutomation__ERC20CannotBeZeroAddress();
+    error RedeemAirdropAutomation__NotForwarder();
 
     address public immutable i_linkToken;
     uint256 public s_redeemed;
@@ -27,6 +28,8 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
     IRouterClient public immutable i_router;
     uint64 public immutable i_destinationChainSelector;
     uint256 public s_gasLimit = 200_000;
+    mapping(address receiver => uint256 amount) internal s_airdropAmounts;
+    address public s_logTriggerforwarder;
 
     event AirdropAmountUpdated(address indexed owner, uint256 newAirdropAmount);
     event AirdropLimitUpdated(address indexed owner, uint256 newAirdropLimit);
@@ -40,6 +43,14 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
     );
     event LinkWithdrawn(address indexed owner, uint256 amount);
     event GasLimitUpdated(address indexed owner, uint256 newGasLimit);
+    event ForwarderUpdated(address indexed owner, address newLogTriggerForwarder);
+
+    modifier onlyLogTriggerForwarder() {
+        if (msg.sender != s_logTriggerforwarder && msg.sender != owner()) {
+            revert RedeemAirdropAutomation__NotForwarder();
+        }
+        _;
+    }
 
     constructor(
         address receiverAddress,
@@ -61,6 +72,11 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
         i_linkToken = linkToken;
         i_destinationChainSelector = destinationChainSelector;
         i_router = IRouterClient(routeraddress);
+    }
+
+    function updateForwarder(address newLogTriggerForwarder) external onlyOwner {
+        s_logTriggerforwarder = newLogTriggerForwarder;
+        emit ForwarderUpdated(msg.sender, newLogTriggerForwarder);
     }
 
     function updateReceiver(address receiver) external onlyOwner {
@@ -86,9 +102,9 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
         view
         returns (bool upkeepNeeded, bytes memory performData)
     {
-        if (s_redeemed < s_airdropLimit) {
+        address receiverAddress = _bytes32ToAddress(log.topics[1]);
+        if (s_redeemed < s_airdropLimit && s_airdropAmounts[receiverAddress] == 0) {
             upkeepNeeded = true;
-            address receiverAddress = _bytes32ToAddress(log.topics[1]);
             performData = abi.encode(receiverAddress);
         }
     }
@@ -98,9 +114,10 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
         emit GasLimitUpdated(msg.sender, newGasLimit);
     }
 
-    function performUpkeep(bytes calldata performData) external override {
+    function performUpkeep(bytes calldata performData) external override onlyLogTriggerForwarder {
         s_redeemed += 1;
         address airdropReceiver = abi.decode(performData, (address));
+        s_airdropAmounts[airdropReceiver] = s_airdropAmount;
         bytes memory mintFunctionCalldata =
             abi.encodeWithSelector(UntilThenERC20.mint.selector, airdropReceiver, s_airdropAmount);
 
@@ -135,5 +152,9 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
             IERC20(i_linkToken).safeTransfer(msg.sender, balance);
             emit LinkWithdrawn(msg.sender, balance);
         }
+    }
+
+    function getUserAirdropAmount(address user) external view returns (uint256) {
+        return s_airdropAmounts[user];
     }
 }

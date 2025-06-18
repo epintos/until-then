@@ -52,7 +52,7 @@ contract CreateGiftWithETHYield is Script {
         (, address account,,,,,,, address untilThenV1Address) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(account);
-        UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
+        UntilThenV1(untilThenV1Address).createGift{ value: 0.02 ether }(
             account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0
         );
         vm.stopBroadcast();

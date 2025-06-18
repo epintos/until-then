@@ -79,7 +79,7 @@ contract HelperConfig is Script {
     address internal constant SEPOLIA_AAVE_WETH_ATOKEN_ADDRESS = 0x5b071b590a59395fE4025A0Ccc1FcC931AAc1830;
     address internal constant SEPOLIA_AAVE_LINK_ADDRESS = 0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5;
     address internal constant SEPOLIA_AAVE_LINK_ATOKEN_ADDRESS = 0x3FfAf50D4F4E96eB78f2407c090b72e86eCaed24;
-    address internal constant SEPOLIA_AAVE_YIELD_MANAGER = 0xd39A3a6cB80cE9e1c000027EF5f515Df6ed393df;
+    address internal constant SEPOLIA_AAVE_YIELD_MANAGER = 0x9bC2359CF283BF2B91b96aD9491d9A8Fc1f13123;
 
     uint256 internal constant SEPOLIA_CHAIN_ID = 11_155_111;
     uint256 internal constant AVALANCHE_FUJI_CHAIN_ID = 43_113;
@@ -89,7 +89,7 @@ contract HelperConfig is Script {
     uint256 internal CURRENCY_GIFT_LINK_FEE = 0.05 ether;
 
     // Avalance airdrop
-    address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0x395FDF4fe945E2c94c79a168fA1f535726764218;
+    address internal constant CCIP_SEPOLIA_SENDER_ADDRESS = 0x30DCDaFD1B0B2C702FE67d1bF0f61821970BB7aA;
     address internal constant CCIP_AVALANCHE_RECEIVER_ADDRESS = 0xC17778DaC70f33d58a6D594bC1aD7f58a4F5Fa4B;
     address internal constant AVALANCHE_ERC2O_TOKEN_ADDRESS = 0x3164d84A42ec935f620d73a2e22C8b3E2Cb049aE;
     // https://docs.chain.link/resources/link-token-contracts#ethereum-testnet-sepolia
@@ -111,7 +111,7 @@ contract HelperConfig is Script {
         33_417_377_138_417_000_668_359_383_073_717_148_462_378_291_091_203_326_927_501_459_759_537_206_218_812;
     address internal constant ETH_USD_PRICE_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
 
-    address internal constant UNTIL_THEN_V1_ADDRESS_SEPOLIA = 0x1f4feC708F7Ff9186e760B1754dCb7927a57E6fd;
+    address internal constant UNTIL_THEN_V1_ADDRESS_SEPOLIA = 0xefA2408BDc98e783440A1B27d72827cec8A399d8;
 
     NetworkConfig public activeNetworkConfig;
 

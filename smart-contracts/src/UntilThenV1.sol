@@ -35,6 +35,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     struct Gift {
         uint256 id;
         uint256 amount;
+        uint256 amountClaimed;
         uint256 releaseTimestamp;
         uint256 nftClaimedId;
         GiftStatus status;
@@ -43,6 +44,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         bool isYield;
         bool linkYield;
         string contentHash;
+        uint256 claimedTimestamp;
     }
 
     /// STATE VARIABLES
@@ -54,17 +56,14 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
     mapping(uint256 id => Gift gift) internal gifts;
     mapping(string yieldCode => IYieldManager yieldManager) public yieldManagers;
 
-    // @notice Base token deposited for gifts
-    mapping(address sender => uint256 amount) internal amountDeposited;
-
     // @notice fee when sending only content
     uint256 internal contentGiftFee;
 
     // @notice fee when sending currency, token or an NFT
-    uint256 internal currencyGiftFee;
-    uint256 internal currencyGiftLinkFee;
+    uint256 public currencyGiftFee;
+    uint256 public currencyGiftLinkFee;
 
-    uint256 internal yieldFeePercentage = 10;
+    uint256 public yieldFeePercentage = 10;
 
     IYieldManager public yieldManager;
     address public linkTokenAddress;
@@ -76,6 +75,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         address indexed receiver, uint256 indexed giftId, uint256 giftAmountToClaim, uint256 nftId, bytes32 requestId
     );
     event YieldFeePercentageUpdated(uint256 newYieldFeePercentage);
+    event YieldManagerUpdated(address owner, address newYieldManager);
 
     /// FUNCTIONS
 
@@ -98,6 +98,11 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
         yieldManager = IYieldManager(_yieldManager);
         linkTokenAddress = _linkTokenAddress;
+    }
+
+    function updateYieldManager(address newYieldManager) external onlyOwner {
+        yieldManager = IYieldManager(newYieldManager);
+        emit YieldManagerUpdated(msg.sender, newYieldManager);
     }
 
     function updateIPFSFunctionsConsumer(address _ipfsFunctionsConsumer) external onlyOwner {
@@ -152,11 +157,13 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
             sender: msg.sender,
             receiver: receiver,
             amount: amount,
+            amountClaimed: 0,
             releaseTimestamp: releaseTimestamp,
             contentHash: contentHash,
             linkYield: linkYield,
             isYield: yield,
-            nftClaimedId: 0
+            nftClaimedId: 0,
+            claimedTimestamp: 0
         });
         gifts[giftId] = gift;
         senderGiftsIds[msg.sender].push(gift.id);
@@ -191,6 +198,7 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
 
         nftId = giftNFTContract.mint(msg.sender, gift.id);
         gift.nftClaimedId = nftId;
+        gift.claimedTimestamp = block.timestamp;
 
         uint256 giftAmountToClaim = gift.amount;
         if (gift.isYield) {
@@ -199,12 +207,15 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
             uint256 yieldFee = (yieldGain * yieldFeePercentage) / 100;
             if (gift.linkYield) {
                 giftAmountToClaim = gift.amount - (currencyGiftLinkFee > yieldFee ? currencyGiftLinkFee : yieldFee);
+                gift.amountClaimed = giftAmountToClaim;
                 yieldManager.withdrawERC20(giftId, giftAmountToClaim, gift.receiver);
             } else {
+                gift.amountClaimed = giftAmountToClaim;
                 giftAmountToClaim = gift.amount - (currencyGiftFee > yieldFee ? currencyGiftFee : yieldFee);
                 yieldManager.withdrawETH(giftId, giftAmountToClaim, gift.receiver);
             }
         } else if (giftAmountToClaim > 0) {
+            gift.amountClaimed = giftAmountToClaim;
             (bool success,) = msg.sender.call{ value: giftAmountToClaim }("");
             if (!success) {
                 revert UntilThenV1__TransferFailed();

@@ -7,13 +7,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { VRFConsumerBaseV2Plus } from "@chainlink/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import { VRFV2PlusClient } from "@chainlink/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import { AggregatorV3Interface } from "@chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { UntilThenERC20 } from "src/avalanche-airdrop/UntilThenERC20.sol";
 
-contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
+contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus, ReentrancyGuard {
     error Giveaway__InvalidRequestId();
     error Giveaway__TransferFailed();
     error Giveaway__InvalidPrice();
+    error Giveaway__NotForwarder();
 
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUMBER_OF_RANDOM_WORDS = 1;
@@ -26,8 +28,11 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
     uint256 public s_subscriptionId;
     uint32 public s_callbackGasLimit;
     uint256 public s_usdPrize = 100e18; // $100
+    address public s_timeBasedforwarder;
+    address public s_logTriggerforwarder;
 
     address[] public s_receivers;
+    mapping(address user => uint256 amount) internal s_winners;
 
     event CallbackGasLimitUpdated(address indexed owner, uint32 callbackGasLimit);
     event SubscriptionIdUpdated(address indexed owner, uint256 subscriptionId);
@@ -38,6 +43,21 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
     event GiveawayComplete(uint256 indexed requestId, address indexed winner, uint256 winnerId, uint256 prize);
     event WithdrawComplete(address indexed owner, uint256 amount);
     event PrizeUpdated(address indexed owner, uint256 amount);
+    event ForwardersUpdated(address indexed owner, address newTimeBasedForwarder, address newLogTriggerForwarder);
+
+    modifier onlyTimeBasedForwarder() {
+        if (msg.sender != s_timeBasedforwarder && msg.sender != owner()) {
+            revert Giveaway__NotForwarder();
+        }
+        _;
+    }
+
+    modifier onlyLogTriggerForwarder() {
+        if (msg.sender != s_logTriggerforwarder && msg.sender != owner()) {
+            revert Giveaway__NotForwarder();
+        }
+        _;
+    }
 
     constructor(
         address vrfCoordinator,
@@ -53,6 +73,12 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
         s_subscriptionId = subscriptionId;
         s_callbackGasLimit = callbackGasLimit;
         i_priceFeed = priceFeed;
+    }
+
+    function updateForwarders(address newTimeBasedForwarder, address newLogTriggerForwarder) external onlyOwner {
+        s_timeBasedforwarder = newTimeBasedForwarder;
+        s_logTriggerforwarder = newLogTriggerForwarder;
+        emit ForwardersUpdated(msg.sender, newTimeBasedForwarder, newLogTriggerForwarder);
     }
 
     function updatecallbackGasLimit(uint32 callbackGasLimit) external onlyOwner {
@@ -90,14 +116,14 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
         }
     }
 
-    function performUpkeep(bytes calldata performData) external override {
+    function performUpkeep(bytes calldata performData) external override onlyLogTriggerForwarder {
         address giftReceiver = abi.decode(performData, (address));
         s_receivers.push(giftReceiver);
 
         emit ReceiverAddedToGiveaway(giftReceiver);
     }
 
-    function performGiveaway() external {
+    function performGiveaway() external onlyTimeBasedForwarder {
         if (s_receivers.length == 0) {
             emit NoReceiversForGiveaway();
             return;
@@ -127,7 +153,7 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
         emit WithdrawComplete(msg.sender, balance);
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override nonReentrant {
         if (requestId != s_lastRequestId) {
             revert Giveaway__InvalidRequestId();
         }
@@ -141,6 +167,7 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
         address winner = s_receivers[winnerId];
 
         uint256 prize = _usdToETH(s_usdPrize);
+        s_winners[winner] += prize;
 
         delete s_receivers;
 
@@ -164,5 +191,9 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus {
 
     function _bytes32ToAddress(bytes32 _address) private pure returns (address) {
         return address(uint160(uint256(_address)));
+    }
+
+    function getUserWins(address user) external view returns (uint256) {
+        return s_winners[user];
     }
 }
