@@ -1,10 +1,12 @@
 "use client";
 
 
-import { Crown, Gift, Inbox, Send } from "lucide-react";
+import { chainsToContracts, giveawayAbi, redeemAirdropAutomationAbi } from "@/constants";
+import { Crown, Gift, Inbox, Send, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { formatUnits } from "viem";
+import { useAccount, useChainId, useReadContract } from "wagmi";
 
 const tabs = [
   { id: "create", name: "Create Gift", icon: Gift, href: "/dashboard/create-gift" },
@@ -15,10 +17,31 @@ const tabs = [
 
 export default function AppDashboard() {
   const { address } = useAccount();
+  const chainId = useChainId();
   const [publicKey, setPublicKey] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string>("");
+
+  // Prizes: Until ERC20 Airdrop (on redeemAirdropAutomation), Weekly Giveaway (on giveaway)
+  const redeemAirdropAddress = chainsToContracts[chainId]?.redeemAirdropAutomation as `0x${string}` | undefined;
+  const giveawayAddress = chainsToContracts[chainId]?.giveaway as `0x${string}` | undefined;
+
+  const { data: airdropAmount } = useReadContract({
+    abi: redeemAirdropAutomationAbi,
+    address: redeemAirdropAddress,
+    functionName: "getUserAirdropAmount",
+    args: [address],
+    query: { enabled: !!address && !!redeemAirdropAddress },
+  });
+
+  const { data: giveawayWins } = useReadContract({
+    abi: giveawayAbi,
+    address: giveawayAddress,
+    functionName: "getUserWins",
+    args: [address],
+    query: { enabled: !!address && !!giveawayAddress },
+  });
 
   const handleGeneratePublicKey = async () => {
     setGenerating(true);
@@ -69,6 +92,26 @@ export default function AppDashboard() {
           );
         })}
       </nav>
+
+      {/* Prizes Panel */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-yellow-500" /> Prizes
+        </h3>
+        <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-yellow-100 to-yellow-200 flex flex-col items-center">
+          <div className="text-xs text-gray-600 mb-1">Until Avalanche Airdrop</div>
+          <div className="text-3xl font-extrabold text-yellow-700 tracking-tight mb-1">
+            {typeof airdropAmount === 'bigint' ? formatUnits(airdropAmount, 18) : '--'} <span className="text-lg font-bold">UNTIL</span>
+          </div>
+        </div>
+        <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center">
+          <div className="text-xs text-gray-600 mb-1">Weekly Giveaway</div>
+          <div className="text-3xl font-extrabold text-blue-700 tracking-tight mb-1">
+            {typeof giveawayWins === 'bigint' ? formatUnits(giveawayWins, 18) : '--'} <span className="text-lg font-bold">ETH</span>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-8">
         <div className="font-semibold text-gray-800 mb-1">Share your public key</div>
         <div className="text-xs text-gray-600 mb-2">
