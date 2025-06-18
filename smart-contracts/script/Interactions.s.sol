@@ -12,6 +12,7 @@ import { GiftNFT } from "src/GiftNFT.sol";
 import { IPFSFunctionsConsumer } from "src/IPFSFunctionsConsumer.sol";
 import { HelperConfig } from "script/HelperConfig.s.sol";
 import { AaveYieldManager } from "src/yield/AaveYieldManager.sol";
+import { Giveaway } from "src/Giveaway.sol";
 import { RedeemAirdropAutomation } from "src/avalanche-airdrop/RedeemAirdropAutomation.sol";
 
 contract CreateGift is Script {
@@ -92,8 +93,17 @@ contract ClaimGift is Script {
 contract Airdrop is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        (, address account,,,,, HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,,) =
-            helperConfig.activeNetworkConfig();
+        (
+            ,
+            address account,
+            ,
+            ,
+            ,
+            ,
+            HelperConfig.AvalancheAirdropConfig memory avalancheAirdropConfig,
+            ,
+            address untilThenV1address
+        ) = helperConfig.activeNetworkConfig();
         vm.startBroadcast(account);
         bytes32[] memory topics = new bytes32[](2);
         topics[0] = keccak256("GiftClaimed(address,uint256,uint256,uint256,bytes32)");
@@ -104,7 +114,7 @@ contract Airdrop is Script {
             txHash: 0,
             blockNumber: 0,
             blockHash: 0,
-            source: 0x15E1CB9F78280D1301f78e98955E7355900c498B,
+            source: untilThenV1address,
             topics: topics,
             data: hex""
         });
@@ -120,6 +130,16 @@ contract Airdrop is Script {
             console.log("Perform is false");
         }
 
+        vm.stopBroadcast();
+    }
+}
+
+contract RunGiveaway is Script {
+    function run() external {
+        HelperConfig helperConfig = new HelperConfig();
+        (, address account,,,,,,,) = helperConfig.activeNetworkConfig();
+        vm.startBroadcast(account);
+        Giveaway(payable(0x01927971547Ec6771e1fc0A9CAdCfA85F9aCCf03)).performGiveaway();
         vm.stopBroadcast();
     }
 }

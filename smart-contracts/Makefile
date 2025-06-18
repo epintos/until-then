@@ -55,3 +55,6 @@ claim-gift :
 	
 airdrop :
 	@forge script script/Interactions.s.sol:Airdrop --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
+
+giveaway :
+	@forge script script/Interactions.s.sol:RunGiveaway --rpc-url $(SEPOLIA_RPC_URL) --account $(SEPOLIA_WALLET_NAME) --broadcast -vvvv
