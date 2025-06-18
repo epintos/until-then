@@ -2,6 +2,7 @@
 
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { Hash, Lock } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
@@ -153,7 +154,7 @@ export default function ClaimedGifts() {
   const [modalTitle, setModalTitle] = useState<string>("");
   const [decrypting, setDecrypting] = useState(false);
 
-  async function fetchAndDecryptContent(contentHash: string, giftId: bigint) {
+  async function fetchAndDecryptContent(contentHash: string) {
     setDecrypting(true);
     try {
       const res = await fetch(`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${contentHash}`);
@@ -168,15 +169,19 @@ export default function ClaimedGifts() {
       });
       setDecrypting(false);
       return decrypted;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setDecrypting(false);
-      alert(err.message || "Failed to decrypt content");
+      if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
+        alert((err as { message: string }).message || "Failed to decrypt content");
+      } else {
+        alert("Failed to decrypt content");
+      }
       return null;
     }
   }
 
   async function handleShowContent(contentHash: string, giftId: bigint) {
-    const decrypted = await fetchAndDecryptContent(contentHash, giftId);
+    const decrypted = await fetchAndDecryptContent(contentHash);
     if (decrypted) {
       setModalTitle(`Gift #${giftId} Content`);
       setModalContent(decrypted);
@@ -185,7 +190,7 @@ export default function ClaimedGifts() {
   }
 
   async function handleDownloadContent(contentHash: string, giftId: bigint) {
-    const decrypted = await fetchAndDecryptContent(contentHash, giftId);
+    const decrypted = await fetchAndDecryptContent(contentHash);
     if (decrypted) {
       const blob = new Blob([decrypted], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -198,14 +203,6 @@ export default function ClaimedGifts() {
       URL.revokeObjectURL(url);
     }
   }
-
-  const handleDownload = (contentHash: string) => {
-    if (contentHash) {
-      window.open(`https://pink-geographical-primate-420.mypinata.cloud/ipfs/${contentHash}`, "_blank");
-    } else {
-      alert("No content hash available for download.");
-    }
-  };
 
   const formatDate = (timestamp: bigint) => {
     const date = new Date(Number(timestamp) * 1000); // Convert Unix timestamp to milliseconds
@@ -229,7 +226,7 @@ export default function ClaimedGifts() {
       {!claimedNFTs || claimedNFTs.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <img src="/file.svg" alt="No NFTs" className="w-8 h-8 text-gray-400" />
+            <Image src="/file.svg" alt="No NFTs" className="w-8 h-8 text-gray-400" width={32} height={32} />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No claimed gifts yet</h3>
           <p className="text-gray-600">Redeem your received gifts to see them as NFTs here</p>
@@ -247,10 +244,12 @@ export default function ClaimedGifts() {
                 {/* NFT Image */}
                 <div className="relative aspect-square">
                   {imageUrl ? (
-                    <img
+                    <Image
                       src={imageUrl}
                       alt={`Gift NFT ${nft.gift.id}`}
                       className="w-full h-full object-cover"
+                      width={400}
+                      height={400}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">

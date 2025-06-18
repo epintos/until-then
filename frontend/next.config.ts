@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
 
   // Performance optimizations
   experimental: {
-    optimizePackageImports: ['@rainbow-me/rainbowkit', 'lucide-react', 'ethers'],
+    optimizePackageImports: ['@rainbow-me/rainbowkit', 'lucide-react', 'ethers']
   },
 
   // Turbopack configuration (moved from experimental.turbo)

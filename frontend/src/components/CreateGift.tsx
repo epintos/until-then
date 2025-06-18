@@ -22,10 +22,8 @@ export default function CreateGift() {
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [contentHash, setContentHash] = useState<string | undefined>(undefined);
   const [isEncrypting, setIsEncrypting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [giftCreated, setGiftCreated] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [buttonState, setButtonState] = useState<'idle' | 'creating' | 'created' | 'error'>('idle');
   const [isGiftTx, setIsGiftTx] = useState(false);
@@ -45,12 +43,11 @@ export default function CreateGift() {
     },
   });
 
-  // Refetch LINK allowance after approval is confirmed
   useEffect(() => {
     if (linkAllowance !== undefined && linkAllowance !== null && typeof linkAllowance === 'bigint' && linkAllowance >= parseEther(formData.amount || "0")) {
       refetchLinkAllowance();
     }
-  }, [linkAllowance, refetchLinkAllowance]);
+  }, [linkAllowance, refetchLinkAllowance, formData.amount]);
 
   useEffect(() => {
     console.log('isSuccess', isSuccess, 'isError', isError, 'buttonState', buttonState);
@@ -74,7 +71,7 @@ export default function CreateGift() {
       setTimeout(() => setButtonState('idle'), 5000);
       setIsGiftTx(false);
     }
-  }, [isSuccess, isError, txError, isGiftTx]);
+  }, [isSuccess, isError, txError, isGiftTx, buttonState]);
 
   const calculateFees = () => {
     const amountAsNumber = parseFloat(formData.amount) || 0; // This is the input as a number (e.g., 0.001 or 10).
@@ -154,8 +151,6 @@ export default function CreateGift() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
-    setContentHash(undefined); // Clear previous hash
-    setGiftCreated(false);
 
     let currentContentHash: string | undefined = undefined;
 
@@ -185,7 +180,6 @@ export default function CreateGift() {
         }
         const data = await response.json();
         currentContentHash = data.cid;
-        setContentHash(data.cid);
         setIsUploading(false);
       } catch (encryptError) {
         console.error("Encryption or upload failed:", encryptError);

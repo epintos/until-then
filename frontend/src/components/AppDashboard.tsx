@@ -32,14 +32,19 @@ export default function AppDashboard() {
       });
       setPublicKey(publicKey);
       setCopied(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (
-        err?.code === 'ACTION_REJECTED' ||
-        err?.message?.toLowerCase().includes('user rejected')
+        typeof err === 'object' && err !== null &&
+        (
+          ('code' in err && err && typeof (err as { code?: unknown }).code === 'string' && (err as { code: string }).code === 'ACTION_REJECTED') ||
+          ('message' in err && err && typeof (err as { message?: unknown }).message === 'string' && ((err as { message: string }).message.toLowerCase().includes('user rejected')))
+        )
       ) {
         setError("Signature request was cancelled. Your public key was not generated.");
+      } else if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
+        setError((err as { message: string }).message || "Failed to generate public key");
       } else {
-        setError(err.message || "Failed to generate public key");
+        setError("Failed to generate public key");
       }
     } finally {
       setGenerating(false);
