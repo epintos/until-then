@@ -1,7 +1,7 @@
 "use client";
 
 import { encrypt } from '@metamask/eth-sig-util';
-import { Calendar, DollarSign, Info, Upload } from "lucide-react";
+import { Calendar, Info, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Address, formatEther, parseEther } from "viem";
 import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
@@ -10,15 +10,13 @@ import { chainsToContracts, erc20Abi, untilThenV1Abi } from "../constants";
 type YieldOption = "none" | "eth" | "link";
 
 export default function CreateGift() {
+  console.log("CreateGift component rendered");
   const chainId = useChainId();
   const { address: connectedAddress } = useAccount();
   const [formData, setFormData] = useState({
     receiverAddress: "",
     receiverPublicKey: "",
     releaseDate: "",
-    releaseTime: "",
-    releaseHour: "",
-    releaseMinute: "",
     amount: "",
     yieldOption: "none" as YieldOption,
   });
@@ -27,16 +25,12 @@ export default function CreateGift() {
   const [contentHash, setContentHash] = useState<string | undefined>(undefined);
   const [isEncrypting, setIsEncrypting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [giftCreated, setGiftCreated] = useState(false);
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+  const [buttonState, setButtonState] = useState<'idle' | 'creating' | 'created' | 'error'>('idle');
+  const { isSuccess, isError, error: txError } = useWaitForTransactionReceipt({ hash: txHash });
 
-  const { writeContract: createGiftWrite, data: createGiftTxHash, isPending: isCreatingGift } = useWriteContract();
-  const { isLoading: isConfirmingCreateGift, isSuccess: isCreateGiftConfirmed } = useWaitForTransactionReceipt({
-    hash: createGiftTxHash,
-  });
-
-  const { writeContract: approveLinkWrite, data: approveLinkTxHash, isPending: isApprovingLink } = useWriteContract();
-  const { isLoading: isConfirmingApproveLink, isSuccess: isApproveLinkConfirmed } = useWaitForTransactionReceipt({
-    hash: approveLinkTxHash,
-  });
+  const { writeContractAsync } = useWriteContract();
 
   const { data: linkAllowance, refetch: refetchLinkAllowance } = useReadContract({
     abi: erc20Abi,
@@ -50,10 +44,31 @@ export default function CreateGift() {
 
   // Refetch LINK allowance after approval is confirmed
   useEffect(() => {
-    if (isApproveLinkConfirmed) {
+    if (linkAllowance !== undefined && linkAllowance !== null && typeof linkAllowance === 'bigint' && linkAllowance >= parseEther(formData.amount || "0")) {
       refetchLinkAllowance();
     }
-  }, [isApproveLinkConfirmed, refetchLinkAllowance]);
+  }, [linkAllowance, refetchLinkAllowance]);
+
+  useEffect(() => {
+    console.log('isSuccess', isSuccess, 'isError', isError, 'buttonState', buttonState);
+    if (isSuccess) {
+      setButtonState('created');
+      // Reset form fields after success
+      setFormData({
+        receiverAddress: "",
+        receiverPublicKey: "",
+        releaseDate: "",
+        amount: "",
+        yieldOption: "none",
+      });
+      setUploadedFile(null);
+      setTimeout(() => setButtonState('idle'), 5000);
+    } else if (isError) {
+      setButtonState('error');
+      if (txError) console.error('Transaction failed:', txError);
+      setTimeout(() => setButtonState('idle'), 5000);
+    }
+  }, [isSuccess, isError, txError]);
 
   const calculateFees = () => {
     const amountAsNumber = parseFloat(formData.amount) || 0; // This is the input as a number (e.g., 0.001 or 10).
@@ -102,7 +117,7 @@ export default function CreateGift() {
     if (!connectedAddress || !formData.amount) return;
 
     try {
-      approveLinkWrite({
+      writeContractAsync({
         abi: erc20Abi,
         address: chainsToContracts[chainId].linkToken as Address,
         functionName: "approve",
@@ -118,6 +133,7 @@ export default function CreateGift() {
     e.preventDefault();
     setIsCreating(true);
     setContentHash(undefined); // Clear previous hash
+    setGiftCreated(false);
 
     let currentContentHash: string | undefined = undefined;
 
@@ -158,12 +174,9 @@ export default function CreateGift() {
       }
     }
 
-    // Convert release date and time to a single timestamp
+    // Calculate release timestamp
     const [year, month, day] = formData.releaseDate.split('-').map(Number);
-    const [hour, minute] = [parseInt(formData.releaseHour), parseInt(formData.releaseMinute)];
-    const releaseDateObj = new Date(year, month - 1, day, hour, minute);
-    const releaseTimestamp = Math.floor(releaseDateObj.getTime() / 1000); // Unix timestamp in seconds
-
+    const releaseTimestamp: number = Math.floor(new Date(year, month - 1, day, 0, 0).getTime() / 1000);
     const amountInWei = parseEther(formData.amount);
 
     try {
@@ -171,34 +184,46 @@ export default function CreateGift() {
         ? formData.receiverAddress as Address 
         : `0x${formData.receiverAddress}` as Address;
 
-      createGiftWrite({
+      // Contract call args: (address, uint256 releaseTimestamp, string contentHash, bool isLink, uint256 amount)
+      const args = [
+        receiverAddressAsAddress,
+        releaseTimestamp,
+        currentContentHash || "",
+        formData.yieldOption !== "none",
+        amountInWei,
+      ];
+      console.log("Call args:", args);
+      setButtonState('creating');
+      console.log("Calling writeContractAsync with args", args);
+      setTxHash(undefined); // Reset txHash before new tx
+      const tx = await writeContractAsync({
         abi: untilThenV1Abi,
         address: chainsToContracts[chainId].untilThenV1 as Address,
         functionName: "createGift",
-        args: [
-          receiverAddressAsAddress, 
-          amountInWei,
-          releaseTimestamp,
-          currentContentHash || "",
-          formData.yieldOption === "link",
-        ],
+        args,
         value: formData.yieldOption === "link" ? parseEther(fees.total.toString()) : amountInWei,
       });
+      setTxHash(tx);
+      console.log("Set txHash:", tx);
     } catch (error) {
-      console.error("Error creating gift:", error);
-      alert("Failed to create gift.");
-      setIsCreating(false);
+      setButtonState('error');
+      console.error("Error sending transaction:", error);
+      setTimeout(() => setButtonState('idle'), 5000);
     }
   };
 
+  useEffect(() => {
+    if (txHash) {
+      console.log("txHash changed:", txHash);
+    }
+  }, [txHash]);
+
   const isFormValid =
-    formData.receiverAddress &&
-    formData.receiverPublicKey &&
-    formData.releaseDate &&
-    formData.releaseHour !== "" &&
-    formData.releaseMinute !== "" &&
-    formData.amount &&
-    parseFloat(formData.amount) > 0;
+    formData.receiverAddress.trim() &&
+    formData.receiverPublicKey.trim() &&
+    formData.releaseDate.trim() &&
+    formData.amount.trim() &&
+    parseFloat(formData.amount.trim()) > 0;
 
   const isLinkApproved = 
     linkAllowance !== undefined && 
@@ -247,49 +272,20 @@ export default function CreateGift() {
           />
         </div>
 
-        {/* Release Date & Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Release Date
-            </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={formData.releaseDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-              <Calendar className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Release Time
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                value={formData.releaseHour}
-                onChange={(e) => setFormData(prev => ({ ...prev, releaseHour: e.target.value }))}
-                placeholder="HH"
-                min="0"
-                max="23"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-              <input
-                type="number"
-                value={formData.releaseMinute}
-                onChange={(e) => setFormData(prev => ({ ...prev, releaseMinute: e.target.value }))}
-                placeholder="MM"
-                min="0"
-                max="59"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
+        {/* Release Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Release Date
+          </label>
+          <div className="relative">
+            <input
+              type="date"
+              value={formData.releaseDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+            <Calendar className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
           </div>
         </div>
 
@@ -364,10 +360,9 @@ export default function CreateGift() {
               value={formData.amount}
               onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
               placeholder="e.g., 0.001 or 10"
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
-            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
           </div>
         </div>
 
@@ -429,30 +424,38 @@ export default function CreateGift() {
           <button
             type="button"
             onClick={handleApproveLink}
-            disabled={isApprovingLink || isConfirmingApproveLink}
+            disabled={isCreating}
             className="w-full py-3 px-4 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75"
           >
-            {isApprovingLink ? "Approving LINK..." : isConfirmingApproveLink ? "LINK Approved!" : "Approve LINK"}
+            {isCreating ? "Approving LINK..." : "Approve LINK"}
           </button>
         )}
 
         <button
           type="submit"
-          disabled={!isFormValid || isCreating || isCreatingGift || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved)}
-          className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-          >
-            {isCreating ? "Creating Gift..." :
-             isCreatingGift ? "Confirming Gift..." : 
-             isEncrypting ? "Encrypting Content..." : 
-             isUploading ? "Uploading Content..." :
-             "Create Gift"}
-          </button>
-
-          {isConfirmingCreateGift && (
-            <p className="text-center text-green-600 mt-4">Gift created successfully! Transaction Hash: {createGiftTxHash}</p>
+          disabled={!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved) || buttonState === 'created'}
+          className={`w-full py-3 px-4 flex items-center justify-center gap-2 font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75
+            ${buttonState === 'created' ? 'bg-green-600 text-white' :
+              buttonState === 'error' ? 'bg-red-600 text-white' :
+              (!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved))
+                ? 'bg-gray-300 text-gray-400 cursor-not-allowed' :
+                'bg-blue-600 text-white hover:bg-blue-700'}`}
+        >
+          {(buttonState === 'creating' || isEncrypting || isUploading) && (
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
           )}
+          {buttonState === 'created' ? "Gift Created" :
+            buttonState === 'error' ? "Transaction Failed" :
+            buttonState === 'creating' ? "Creating Gift..." :
+            isEncrypting ? "Encrypting Content..." : 
+            isUploading ? "Uploading Content..." :
+            "Create Gift"}
+        </button>
 
-        </form>
-      </div>
-    );
-  }
+      </form>
+    </div>
+  );
+}

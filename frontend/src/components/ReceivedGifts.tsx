@@ -1,7 +1,7 @@
 "use client";
 
 import { chainsToContracts, untilThenV1Abi } from "@/constants";
-import { Calendar, Clock, DollarSign, Gift, Hash, Lock, Tag, TrendingUp } from "lucide-react";
+import { Calendar, Clock, DollarSign, Gift, Hash, Lock, TrendingUp } from "lucide-react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
@@ -209,14 +209,6 @@ export default function ReceivedGifts() {
                     ) : (
                       "No content"
                     )}
-                  </span>
-                </div>
-
-                {/* NFT Claimed ID */}
-                <div className="flex items-center gap-2 mb-3">
-                  <Tag className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600 font-mono">
-                    {status === "Pending" ? "Not claimed yet" : gift.nftClaimedId.toString()}
                   </span>
                 </div>
 

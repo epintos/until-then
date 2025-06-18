@@ -14,9 +14,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No encrypted content provided" }, { status: 400 });
     }
 
-    const result = await pinata.upload.private.json(
-      { encryptedContent, sender, timestamp }
-    );
+    const jsonContent = JSON.stringify({ encryptedContent, sender, timestamp });
+
+    const file = new File([jsonContent], `${timestamp}-${sender}.json]`, {
+      type: "application/json",
+    });
+
+    const result = await pinata.upload.private.file(file);
 
     await pinata.groups.private.addFiles({
       groupId: process.env.PINATA_PUBLIC_GROUP_ID!,

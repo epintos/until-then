@@ -42,12 +42,36 @@ const nextConfig: NextConfig = {
       };
     }
 
+    // Suppress WalletConnect and other verbose logs
+    config.infrastructureLogging = {
+      level: 'error',
+    };
+
+    // Ignore specific modules that cause verbose logging
+    config.ignoreWarnings = [
+      /Module not found: Can't resolve 'pino-pretty'/,
+      /WalletConnect Core is already initialized/,
+    ];
+
     return config;
   },
 
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+
+  // Logging configuration
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+  },
+
+  // Suppress build output verbosity
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 

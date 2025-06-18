@@ -5,6 +5,18 @@ import Header from "@/components/Header";
 import { ReactNode } from "react";
 import { Providers } from "./providers";
 
+// Suppress WalletConnect warnings and verbose logging
+if (typeof window !== 'undefined') {
+  // Suppress WalletConnect initialization warnings
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    if (args[0]?.includes?.('WalletConnect Core is already initialized')) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+}
+
 export const metadata: Metadata = {
   title: "Until Then",
 };
