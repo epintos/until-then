@@ -237,7 +237,6 @@ export default function ClaimedGifts() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {claimedNFTs.map((nft) => {
             const imageUrl = nft.metadata?.image;
-            const contentHash = nft.metadata?.contentHash || "";
             return (
               <div
                 key={nft.gift.id.toString()}
