@@ -29,7 +29,7 @@ export default function RootLayout(props: { children: ReactNode }) {
           <Header />
           {props.children}
           <footer className="w-full mt-12 py-4 text-center text-xs text-gray-400 bg-transparent">
-            © 2024 Until Then. All rights reserved.
+            © 2025 Until Then. All rights reserved.
           </footer>
         </Providers>
       </body>

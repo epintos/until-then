@@ -3,6 +3,7 @@
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { BrowserProvider, Contract } from "ethers";
 import { Calendar, Clock, DollarSign, Gift, Hash, Loader, Lock, TrendingUp } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
@@ -131,7 +132,6 @@ export default function ReceivedGifts() {
   const { writeContractAsync } = useWriteContract();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState<'redeeming' | 'decrypting' | 'done' | 'error'>('redeeming');
-  const [modalMessage, setModalMessage] = useState<string>("");
   const [modalError, setModalError] = useState<string>("");
   const [progress, setProgress] = useState(0);
 
@@ -193,7 +193,6 @@ export default function ReceivedGifts() {
   async function handleRedeem(giftId: bigint, contentHash: string) {
     setModalOpen(true);
     setModalStep('redeeming');
-    setModalMessage('Waiting for wallet confirmation...');
     setModalError("");
     setWaitingForWallet(true);
     setLastRedeemArgs({ giftId, contentHash });
@@ -206,7 +205,6 @@ export default function ReceivedGifts() {
         args: [giftId],
       });
       setWaitingForWallet(false);
-      setModalMessage('Waiting for NFT creation...');
       // Start progress bar for redeeming
       setModalStep('redeeming');
       // 2. Wait for GiftClaimed event
@@ -242,7 +240,6 @@ export default function ReceivedGifts() {
       // If contentHash, just wait for ContentHashUpdated, but don't try to extract the ID from it
       if (contentHash) {
         setModalStep('decrypting');
-        setModalMessage('Waiting for content to be decrypted... This can take up to 5 minutes.');
         const giftNFTAddr = await fetchGiftNFTAddress();
         if (!giftNFTAddr) throw new Error('No GiftNFT address');
         const giftNFTContract = new Contract(giftNFTAddr, giftNFTAbi, provider);
@@ -254,10 +251,8 @@ export default function ReceivedGifts() {
             resolve();
           });
         });
-        setModalMessage('Content hash updated!');
       }
       setModalStep('done');
-      setModalMessage('Gift successfully redeemed!');
     } catch (error) {
       setWaitingForWallet(false);
       console.error(error);
@@ -482,18 +477,20 @@ export default function ReceivedGifts() {
                     <details className="mt-4 w-full max-w-md mx-auto bg-gray-50 rounded p-3 border border-gray-200">
                       <summary className="cursor-pointer font-semibold text-gray-800">How does this work?</summary>
                       <div className="mt-2 text-gray-600 text-sm">
-                      The content is initially uploaded in encrypted form to Pinata's private IPFS. A Chainlink Function then moves the file to a public Pinata IPFS, making it accessible for decryption once it has been claimed. This step waits for an event emitted upon completion of the Chainlink Function.
+                      The content is initially uploaded in encrypted form to Pinata&apos;s private IPFS. A Chainlink Function then moves the file to a public Pinata IPFS, making it accessible for decryption once it has been claimed. This step waits for an event emitted upon completion of the Chainlink Function.
                       </div>
                     </details>
                   </>
                 )}
                 {modalStep === 'done' && (
                   <>
-                    <img
+                    <Image
                       src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeDF1N3V0c3l3NXJhYmN4MHpseGc4cHdtdGEwcnpocXMzbG55c2s1cyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/hVVJisUlKBgQYc6PQh/giphy.gif"
                       alt="Gift animation"
                       className="my-4 mx-auto rounded-lg shadow"
                       style={{ width: '200px', height: '200px', objectFit: 'cover' }}
+                      width={200}
+                      height={200}
                     />
                     <div className="mb-2 text-gray-700 text-center font-semibold">
                       NFT with ID: {claimedNftId} has been claimed. The NFT includes the contents of your gift. Enjoy!

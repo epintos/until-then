@@ -285,7 +285,7 @@ export default function CreateGift() {
             type="text"
             value={formData.receiverPublicKey}
             onChange={(e) => setFormData(prev => ({ ...prev, receiverPublicKey: e.target.value }))}
-            placeholder="Paste the receiver's public key here"
+            placeholder="Paste the receiver&apos;s public key here"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -315,7 +315,7 @@ export default function CreateGift() {
             <span className="relative group">
               <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
               <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
-                The encrypted content will be uploaded to Pinata's private IPFS, allowing the receiver to access it only after the specified release date.
+                The encrypted content will be uploaded to Pinata&apos;s private IPFS, allowing the receiver to access it only after the specified release date.
               </span>
             </span>
           </label>
@@ -376,7 +376,7 @@ export default function CreateGift() {
                       <span className="relative group">
                         <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
                         <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
-                          On Sepolia (for testing), you'll need LINK tokens compatible with Aave. You can obtain them from: https://app.aave.com/faucet/
+                          On Sepolia (for testing), you&apos;ll need LINK tokens compatible with Aave. You can obtain them from: https://app.aave.com/faucet/
                         </span>
                       </span>
                     )}
