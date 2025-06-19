@@ -266,32 +266,32 @@ export default function ClaimedGifts() {
             const imageUrl = nft.metadata?.image;
             const isLast = idx === claimedNFTs.length - 1;
             return (
-              <div
+            <div
                 key={nft.gift.id.toString()}
                 ref={isLast ? lastCardRef : undefined}
                 className={`bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all group border-gray-200 ${highlightLast && isLast ? 'ring-4 ring-blue-400 border-blue-400' : ''}`}
-              >
-                {/* NFT Image */}
+            >
+              {/* NFT Image */}
                 <div className="relative w-full h-[120px]">
                   {imageUrl ? (
                     <Image
                       src={imageUrl}
                       alt={`Gift NFT ${nft.gift.id}`}
-                      className="w-full h-full object-cover"
+                  className="w-full h-full object-cover"
                       width={160}
                       height={120}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">No Image</div>
                   )}
-                </div>
+              </div>
 
-                {/* NFT Details */}
+              {/* NFT Details */}
                 <div className="p-3">
-                  <div className="mb-3">
+                <div className="mb-3">
                     <h3 className="font-semibold text-gray-900 mb-1 text-base">
                       Gift ID: #{nft.gift.id.toString()}
-                    </h3>
+                  </h3>
                     <p className="text-xs text-gray-600 mb-1">
                       NFT ID: #{nft.id.toString()}
                     </p>
@@ -306,13 +306,13 @@ export default function ClaimedGifts() {
                     <p className="text-xs text-gray-500 mb-1">Amount Claimed:</p>
                     <p className="text-xs text-gray-700">
                       {nft.gift.linkYield ? formatUnits(nft.gift.amountClaimed || BigInt(0), 18) : formatEther(nft.gift.amountClaimed || BigInt(0))} {nft.gift.linkYield ? 'LINK' : 'ETH'}
-                    </p>
-                  </div>
+                  </p>
+                </div>
 
                   {/* Content Hash - Only show if gift has contentHash */}
                   {nft.gift.contentHash && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <Hash className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2 mb-3">
+                  <Hash className="w-4 h-4 text-gray-400" />
                       <span className="text-xs text-gray-600 font-mono">
                         {nft.metadata?.contentHash ? (
                           nft.gift.status === 1 ? (
@@ -330,27 +330,27 @@ export default function ClaimedGifts() {
                         ) : (
                           <span>Decryption pending</span>
                         )}
-                      </span>
+                  </span>
                     </div>
                   )}
 
                   {/* Action Buttons - Only show if gift has contentHash */}
                   {nft.gift.contentHash && (
                     <div className="mt-4 flex gap-2">
-                      <button
+                  <button
                         onClick={() => handleShowContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
                         className="w-1/2 py-1 px-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
-                      >
+                  >
                         Show content
-                      </button>
-                      <button
+                  </button>
+                  <button
                         onClick={() => handleDownloadContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
                         className="w-1/2 py-1 px-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
-                      >
+                  >
                         <Download className="w-4 h-4" aria-label="Download content" />
-                      </button>
+                  </button>
                     </div>
                   )}
                 </div>
@@ -364,12 +364,12 @@ export default function ClaimedGifts() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
-            <button
+                <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
               onClick={() => setModalOpen(false)}
-            >
+                >
               ×
-            </button>
+                </button>
             <h2 className="text-lg font-bold mb-4">{modalTitle}</h2>
             <pre className="whitespace-pre-wrap break-words text-gray-800 bg-gray-50 rounded p-4 max-h-96 overflow-auto">{modalContent}</pre>
           </div>
