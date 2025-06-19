@@ -99,7 +99,7 @@ export default function AppDashboard() {
           <Trophy className="w-5 h-5 text-yellow-500" /> Prizes
         </h3>
         <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-yellow-100 to-yellow-200 flex flex-col items-center">
-          <div className="text-xs text-gray-600 mb-1">Until Avalanche Airdrop</div>
+          <div className="text-xs text-gray-600 mb-1">UNTIL Avalanche Airdrop</div>
           <div className="text-3xl font-extrabold text-yellow-700 tracking-tight mb-1">
             {typeof airdropAmount === 'bigint' ? formatUnits(airdropAmount, 18) : '--'} <span className="text-lg font-bold">UNTIL</span>
           </div>

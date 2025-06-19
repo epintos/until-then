@@ -1,7 +1,7 @@
 "use client";
 
 import { chainsToContracts, untilThenV1Abi } from "@/constants";
-import { Calendar, DollarSign, Hash, Lock, Tag, TrendingUp } from "lucide-react";
+import { Calendar, DollarSign, Hash, Loader, Lock, Tag, TrendingUp } from "lucide-react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
@@ -131,8 +131,11 @@ export default function SentGifts() {
           Track the gifts you have sent and their status
         </p>
       </div>
-
-      {!gifts || gifts.length === 0 ? (
+      {gifts === undefined ? (
+        <div className="flex justify-center items-center py-16">
+          <Loader className="animate-spin w-10 h-10 text-gray-400" />
+        </div>
+      ) : !gifts || gifts.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="w-8 h-8 text-gray-400" />

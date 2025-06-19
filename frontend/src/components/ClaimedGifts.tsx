@@ -1,7 +1,7 @@
 "use client";
 
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
-import { Hash, Lock } from "lucide-react";
+import { Hash, Loader, Lock } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Abi, formatEther, formatUnits } from "viem";
@@ -239,7 +239,11 @@ export default function ClaimedGifts() {
         <p className="text-gray-600">Your collection of redeemed gift NFTs</p>
       </div>
 
-      {!claimedNFTs || claimedNFTs.length === 0 ? (
+      {claimedNFTs === undefined ? (
+        <div className="flex justify-center items-center py-16">
+          <Loader className="animate-spin w-10 h-10 text-gray-400" />
+        </div>
+      ) : !claimedNFTs || claimedNFTs.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Image src="/file.svg" alt="No NFTs" className="w-8 h-8 text-gray-400" width={32} height={32} />

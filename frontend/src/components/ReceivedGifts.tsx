@@ -2,7 +2,7 @@
 
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { BrowserProvider, Contract } from "ethers";
-import { Calendar, Clock, DollarSign, Gift, Hash, Lock, TrendingUp } from "lucide-react";
+import { Calendar, Clock, DollarSign, Gift, Hash, Loader, Lock, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
@@ -275,7 +275,11 @@ export default function ReceivedGifts() {
         </p>
       </div>
 
-      {!gifts || gifts.length === 0 ? (
+      {gifts === undefined ? (
+        <div className="flex justify-center items-center py-16">
+          <Loader className="animate-spin w-10 h-10 text-gray-400" />
+        </div>
+      ) : !gifts || gifts.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Gift className="w-8 h-8 text-gray-400" />
@@ -478,7 +482,7 @@ export default function ReceivedGifts() {
                     <details className="mt-4 w-full max-w-md mx-auto bg-gray-50 rounded p-3 border border-gray-200">
                       <summary className="cursor-pointer font-semibold text-gray-800">How does this work?</summary>
                       <div className="mt-2 text-gray-600 text-sm">
-                        The content was originally uploaded encrypted to Pinata's private IPFS. Using a Chainlink Function, the Pinata file is moved to a public Pinata IPFS so it's available to be decrypted once claimed. This step waits for an event emited when the Chainlink Function is completed.
+                      The content is initially uploaded in encrypted form to Pinata's private IPFS. A Chainlink Function then moves the file to a public Pinata IPFS, making it accessible for decryption once it has been claimed. This step waits for an event emitted upon completion of the Chainlink Function.
                       </div>
                     </details>
                   </>
