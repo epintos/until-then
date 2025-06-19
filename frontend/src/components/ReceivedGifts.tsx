@@ -3,7 +3,7 @@
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { BrowserProvider, Contract } from "ethers";
 import { Calendar, Clock, DollarSign, Gift, Hash, Lock, TrendingUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
@@ -134,8 +134,6 @@ export default function ReceivedGifts() {
   const [modalMessage, setModalMessage] = useState<string>("");
   const [modalError, setModalError] = useState<string>("");
   const [progress, setProgress] = useState(0);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const confettiRef = useRef<HTMLCanvasElement>(null);
 
   // Get the GiftNFT address from the contract (if needed)
   const [giftNFTAddress, setGiftNFTAddress] = useState<string | null>(null);
@@ -147,55 +145,14 @@ export default function ReceivedGifts() {
   // Add a state to store the claimed NFT ID
   const [claimedNftId, setClaimedNftId] = useState<string | null>(null);
 
-  // Confetti animation (simple)
+  // Restore progress bar animation
   useEffect(() => {
-    if (showConfetti && confettiRef.current) {
-      const canvas = confettiRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      const W = canvas.width = 400;
-      const H = canvas.height = 200;
-      const confettiCount = 80;
-      const confetti = Array.from({ length: confettiCount }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: Math.random() * 6 + 4,
-        d: Math.random() * confettiCount,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-        tilt: Math.random() * 10 - 10
-      }));
-      let angle = 0;
-      let animationFrame: number;
-      function draw() {
-        if (!ctx) return;
-        ctx.clearRect(0, 0, W, H);
-        angle += 0.01;
-        for (let i = 0; i < confettiCount; i++) {
-          const c = confetti[i];
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, c.r, 0, 2 * Math.PI);
-          ctx.fillStyle = c.color;
-          ctx.fill();
-          c.y += Math.cos(angle + c.d) + 1 + c.r / 2;
-          c.x += Math.sin(angle) * 2;
-          if (c.y > H) {
-            c.x = Math.random() * W;
-            c.y = -10;
-          }
-        }
-        animationFrame = requestAnimationFrame(draw);
-      }
-      draw();
-      return () => cancelAnimationFrame(animationFrame);
+    if (!modalOpen) {
+      setProgress(0);
+      return;
     }
-  }, [showConfetti]);
-
-  // Progress bar animation
-  useEffect(() => {
-    if (!modalOpen) return;
-    setProgress(0);
-    setShowConfetti(false);
     if (modalStep === 'redeeming') {
+      setProgress(0);
       let p = 0;
       const interval = setInterval(() => {
         p += 100 / 60; // 60 steps for 1 min
@@ -204,6 +161,7 @@ export default function ReceivedGifts() {
       }, 1000);
       return () => clearInterval(interval);
     } else if (modalStep === 'decrypting') {
+      setProgress(0);
       let p = 0;
       const interval = setInterval(() => {
         p += 100 / 300; // 300 steps for 5 min
@@ -213,7 +171,6 @@ export default function ReceivedGifts() {
       return () => clearInterval(interval);
     } else if (modalStep === 'done') {
       setProgress(100);
-      setShowConfetti(true);
     }
   }, [modalOpen, modalStep]);
 
@@ -258,12 +215,31 @@ export default function ReceivedGifts() {
       const filter = contract.filters.GiftClaimed(null, giftId);
       const nftId: unknown = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timed out waiting NFT creation')), 120000);
-        contract.once(filter, (...args) => {
+        contract.once(filter, (eventPayload) => {
           clearTimeout(timeout);
-          resolve(args[3]);
+          // ethers v6: eventPayload is a ContractEventPayload object with .args property
+          let nftId;
+          if (eventPayload && typeof eventPayload === 'object' && 'args' in eventPayload && Array.isArray(eventPayload.args)) {
+            nftId = eventPayload.args[3];
+          } else {
+            // fallback for array style
+            nftId = eventPayload[3];
+          }
+          let claimedId;
+          if (typeof nftId === 'bigint') {
+            claimedId = nftId.toString();
+          } else if (typeof nftId === 'string') {
+            claimedId = nftId;
+          } else if (nftId && typeof nftId === 'object' && 'toString' in nftId && typeof nftId.toString === 'function') {
+            claimedId = nftId.toString();
+          } else {
+            claimedId = String(nftId);
+          }
+          setClaimedNftId(claimedId);
+          resolve(nftId);
         });
       });
-      // 3. If contentHash exists, wait for ContentHashUpdated
+      // If contentHash, just wait for ContentHashUpdated, but don't try to extract the ID from it
       if (contentHash) {
         setModalStep('decrypting');
         setModalMessage('Waiting for content to be decrypted... This can take up to 5 minutes.');
@@ -273,55 +249,19 @@ export default function ReceivedGifts() {
         const giftNFTFilter = giftNFTContract.filters.ContentHashUpdated(nftId);
         await new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('Timed out waiting for decryption')), 300000);
-          giftNFTContract.once(giftNFTFilter, (eventNftId: unknown) => {
+          giftNFTContract.once(giftNFTFilter, () => {
             clearTimeout(timeout);
-            let idValue = eventNftId;
-            if (Array.isArray(eventNftId)) {
-              idValue = eventNftId[0];
-            }
-            if (idValue && typeof idValue === 'object') {
-              if ('toString' in idValue && typeof idValue.toString === 'function') {
-                setClaimedNftId(idValue.toString());
-              } else if ('_hex' in idValue) {
-                setClaimedNftId(String((idValue as any)._hex));
-              } else {
-                setClaimedNftId(JSON.stringify(idValue));
-              }
-            } else {
-              setClaimedNftId(String(idValue));
-            }
             resolve();
           });
         });
         setModalMessage('Content hash updated!');
-      } else {
-        // If no content hash, set the claimed NFT ID from nftId
-        let idValue = nftId;
-        if (Array.isArray(nftId)) {
-          idValue = nftId[0];
-        }
-        if (idValue && typeof idValue === 'object') {
-          if ('toString' in idValue && typeof idValue.toString === 'function') {
-            setClaimedNftId(idValue.toString());
-          } else if ('_hex' in idValue) {
-            setClaimedNftId(String((idValue as any)._hex));
-          } else {
-            setClaimedNftId(JSON.stringify(idValue));
-          }
-        } else {
-          setClaimedNftId(String(idValue));
-        }
       }
       setModalStep('done');
       setModalMessage('Gift successfully redeemed!');
     } catch (error) {
       setWaitingForWallet(false);
-      setShowConfetti(false);
-      if (error instanceof Error && error.message && error.message.toLowerCase().includes('user denied')) {
-        setModalError('Transaction canceled');
-      } else {
-        setModalError(error instanceof Error ? error.message : 'Redemption failed');
-      }
+      console.error(error);
+      setModalError('Something went wrong. Please try again.');
       setModalStep('error');
     }
   }
@@ -482,7 +422,7 @@ export default function ReceivedGifts() {
             >
               ×
             </button>
-            <h2 className="text-lg font-bold mb-4">Redeeming Gift</h2>
+            <h2 className="text-lg font-bold mb-4">Claiming Gift</h2>
             {/* Waiting for wallet confirmation */}
             {waitingForWallet ? (
               <div className="mb-4 w-full text-center text-gray-700">Waiting for wallet confirmation...</div>
@@ -511,13 +451,13 @@ export default function ReceivedGifts() {
                     {modalStep === 'redeeming' && (
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                        <span>Claiming gift and creating NFT</span>
+                        <span>Claiming your gift in the shape of an NFT</span>
                       </div>
                     )}
                     {modalStep === 'decrypting' && (
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                        <span>Decrypting content</span>
+                        <span>Making encrypted content available</span>
                       </div>
                     )}
                   </div>
@@ -530,10 +470,18 @@ export default function ReceivedGifts() {
                   </div>
                 </div>
                 {modalStep === 'redeeming' && (
-                  <div className="mt-4 text-center text-gray-700">Waiting for NFT creation...</div>
+                  <div className="mt-4 text-center text-gray-700">This might take a minute...</div>
                 )}
                 {modalStep === 'decrypting' && (
-                  <div className="mt-4 text-center text-gray-700">This can take up to 5 minutes.</div>
+                  <>
+                    <div className="mt-4 text-center text-gray-700">This can take up to 5 minutes...</div>
+                    <details className="mt-4 w-full max-w-md mx-auto bg-gray-50 rounded p-3 border border-gray-200">
+                      <summary className="cursor-pointer font-semibold text-gray-800">How does this work?</summary>
+                      <div className="mt-2 text-gray-600 text-sm">
+                        The content was originally uploaded encrypted to Pinata's private IPFS. Using a Chainlink Function, the Pinata file is moved to a public Pinata IPFS so it's available to be decrypted once claimed. This step waits for an event emited when the Chainlink Function is completed.
+                      </div>
+                    </details>
+                  </>
                 )}
                 {modalStep === 'done' && (
                   <>
@@ -544,7 +492,7 @@ export default function ReceivedGifts() {
                       style={{ width: '200px', height: '200px', objectFit: 'cover' }}
                     />
                     <div className="mb-2 text-gray-700 text-center font-semibold">
-                      NFT with ID: {claimedNftId} has been claimed
+                      NFT with ID: {claimedNftId} has been claimed. The NFT includes the contents of your gift. Enjoy!
                     </div>
                     <div className="flex justify-center mt-4">
                       <button
