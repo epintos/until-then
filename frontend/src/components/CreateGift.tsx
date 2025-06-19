@@ -10,7 +10,6 @@ import { chainsToContracts, erc20Abi, untilThenV1Abi } from "../constants";
 type YieldOption = "none" | "eth" | "link";
 
 export default function CreateGift() {
-  console.log("CreateGift component rendered");
   const chainId = useChainId();
   const { address: connectedAddress } = useAccount();
   const [formData, setFormData] = useState({
@@ -50,7 +49,6 @@ export default function CreateGift() {
   }, [linkAllowance, refetchLinkAllowance, formData.amount]);
 
   useEffect(() => {
-    console.log('isSuccess', isSuccess, 'isError', isError, 'buttonState', buttonState);
     if (isGiftTx && isSuccess) {
       setButtonState('created');
       // Reset form fields after successful gift creation only
@@ -208,9 +206,7 @@ export default function CreateGift() {
         formData.yieldOption !== "none",
         formData.yieldOption === "link" ? amountInWei: 0,
       ];
-      console.log("Call args:", args);
       setButtonState('creating');
-      console.log("Calling writeContractAsync with args", args);
       setTxHash(undefined); // Reset txHash before new tx
       const tx = await writeContractAsync({
         abi: untilThenV1Abi,
@@ -221,7 +217,6 @@ export default function CreateGift() {
       });
       setTxHash(tx);
       setIsGiftTx(true);
-      console.log("Set txHash:", tx);
     } catch (error) {
       setButtonState('error');
       console.error("Error sending transaction:", error);
@@ -229,12 +224,6 @@ export default function CreateGift() {
       setIsGiftTx(false);
     }
   };
-
-  useEffect(() => {
-    if (txHash) {
-      console.log("txHash changed:", txHash);
-    }
-  }, [txHash]);
 
   const isFormValid =
     formData.receiverAddress.trim() &&
