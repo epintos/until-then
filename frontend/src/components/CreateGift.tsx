@@ -251,7 +251,11 @@ export default function CreateGift() {
     typeof linkAllowance === 'bigint' &&
     linkAllowance >= parseEther(formData.amount || "0");
 
-  const showApproveLinkButton = formData.yieldOption === "link" && !isLinkApproved;
+  const showApproveLinkButton =
+    formData.yieldOption === "link" &&
+    linkAllowance !== undefined &&
+    linkAllowance !== null &&
+    !isLinkApproved;
 
   return (
     <div className="max-w-2xl">
@@ -397,8 +401,14 @@ export default function CreateGift() {
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
             Amount
+            <span className="relative group">
+              <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                This is the amount the receiver will receive when claiming the gift. Depending on the selected options and applicable fees, the final amount may be slightly lower than the value entered here.
+              </span>
+            </span>
           </label>
           <div className="relative">
             <input
