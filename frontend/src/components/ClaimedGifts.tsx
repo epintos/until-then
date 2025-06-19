@@ -3,7 +3,7 @@
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { Hash, Lock } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Abi, formatEther, formatUnits } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 
@@ -155,6 +155,20 @@ export default function ClaimedGifts() {
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [modalTitle, setModalTitle] = useState<string>("");
   const [decrypting, setDecrypting] = useState(false);
+  const [highlightLast, setHighlightLast] = useState(false);
+  const lastCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('highlightLastClaimedGift')) {
+      setHighlightLast(true);
+      localStorage.removeItem('highlightLastClaimedGift');
+      setTimeout(() => setHighlightLast(false), 3000);
+      // Optionally scroll into view
+      setTimeout(() => {
+        lastCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, []);
 
   async function fetchAndDecryptContent(contentHash: string) {
     setDecrypting(true);
@@ -235,12 +249,14 @@ export default function ClaimedGifts() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {claimedNFTs.map((nft) => {
+          {claimedNFTs.map((nft, idx) => {
             const imageUrl = nft.metadata?.image;
+            const isLast = idx === claimedNFTs.length - 1;
             return (
               <div
                 key={nft.gift.id.toString()}
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all group"
+                ref={isLast ? lastCardRef : undefined}
+                className={`bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all group border-gray-200 ${highlightLast && isLast ? 'ring-4 ring-blue-400 border-blue-400' : ''}`}
               >
                 {/* NFT Image */}
                 <div className="relative aspect-square">

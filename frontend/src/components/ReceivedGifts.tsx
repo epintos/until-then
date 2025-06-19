@@ -3,7 +3,7 @@
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
 import { BrowserProvider, Contract } from "ethers";
 import { Calendar, Clock, DollarSign, Gift, Hash, Lock, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 
@@ -130,12 +130,92 @@ export default function ReceivedGifts() {
 
   const { writeContractAsync } = useWriteContract();
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalStep, setModalStep] = useState<'redeeming' | 'decrypting' | 'done'>('redeeming');
+  const [modalStep, setModalStep] = useState<'redeeming' | 'decrypting' | 'done' | 'error'>('redeeming');
   const [modalMessage, setModalMessage] = useState<string>("");
   const [modalError, setModalError] = useState<string>("");
+  const [progress, setProgress] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const confettiRef = useRef<HTMLCanvasElement>(null);
 
   // Get the GiftNFT address from the contract (if needed)
   const [giftNFTAddress, setGiftNFTAddress] = useState<string | null>(null);
+
+  // Add a new state to track if waiting for wallet confirmation and to store the last redeem args for retry
+  const [waitingForWallet, setWaitingForWallet] = useState(false);
+  const [lastRedeemArgs, setLastRedeemArgs] = useState<{giftId: bigint, contentHash: string} | null>(null);
+
+  // Add a state to store the claimed NFT ID
+  const [claimedNftId, setClaimedNftId] = useState<string | null>(null);
+
+  // Confetti animation (simple)
+  useEffect(() => {
+    if (showConfetti && confettiRef.current) {
+      const canvas = confettiRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const W = canvas.width = 400;
+      const H = canvas.height = 200;
+      const confettiCount = 80;
+      const confetti = Array.from({ length: confettiCount }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * confettiCount,
+        color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+        tilt: Math.random() * 10 - 10
+      }));
+      let angle = 0;
+      let animationFrame: number;
+      function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, W, H);
+        angle += 0.01;
+        for (let i = 0; i < confettiCount; i++) {
+          const c = confetti[i];
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.r, 0, 2 * Math.PI);
+          ctx.fillStyle = c.color;
+          ctx.fill();
+          c.y += Math.cos(angle + c.d) + 1 + c.r / 2;
+          c.x += Math.sin(angle) * 2;
+          if (c.y > H) {
+            c.x = Math.random() * W;
+            c.y = -10;
+          }
+        }
+        animationFrame = requestAnimationFrame(draw);
+      }
+      draw();
+      return () => cancelAnimationFrame(animationFrame);
+    }
+  }, [showConfetti]);
+
+  // Progress bar animation
+  useEffect(() => {
+    if (!modalOpen) return;
+    setProgress(0);
+    setShowConfetti(false);
+    if (modalStep === 'redeeming') {
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 100 / 60; // 60 steps for 1 min
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (modalStep === 'decrypting') {
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 100 / 300; // 300 steps for 5 min
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else if (modalStep === 'done') {
+      setProgress(100);
+      setShowConfetti(true);
+    }
+  }, [modalOpen, modalStep]);
 
   // Helper to get the GiftNFT address
   async function fetchGiftNFTAddress() {
@@ -156,23 +236,28 @@ export default function ReceivedGifts() {
   async function handleRedeem(giftId: bigint, contentHash: string) {
     setModalOpen(true);
     setModalStep('redeeming');
-    setModalMessage('Waiting for on-chain confirmation...');
+    setModalMessage('Waiting for wallet confirmation...');
     setModalError("");
+    setWaitingForWallet(true);
+    setLastRedeemArgs({ giftId, contentHash });
     try {
-      // 1. Call claimGift
+      // Wait for user to confirm tx
       await writeContractAsync({
         abi: untilThenV1Abi,
         address: untilThenAddress,
         functionName: "claimGift",
         args: [giftId],
       });
-      setModalMessage('Waiting for NFT to be minted...');
+      setWaitingForWallet(false);
+      setModalMessage('Waiting for NFT creation...');
+      // Start progress bar for redeeming
+      setModalStep('redeeming');
       // 2. Wait for GiftClaimed event
       const provider = new BrowserProvider(window.ethereum);
       const contract = new Contract(untilThenAddress, untilThenV1Abi, provider);
       const filter = contract.filters.GiftClaimed(null, giftId);
-      const nftId = await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Timed out waiting for GiftClaimed event')), 120000);
+      const nftId: unknown = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timed out waiting NFT creation')), 120000);
         contract.once(filter, (...args) => {
           clearTimeout(timeout);
           resolve(args[3]);
@@ -187,20 +272,57 @@ export default function ReceivedGifts() {
         const giftNFTContract = new Contract(giftNFTAddr, giftNFTAbi, provider);
         const giftNFTFilter = giftNFTContract.filters.ContentHashUpdated(nftId);
         await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('Timed out waiting for ContentHashUpdated event (5 minutes)')), 300000);
-          giftNFTContract.once(giftNFTFilter, () => {
+          const timeout = setTimeout(() => reject(new Error('Timed out waiting for decryption')), 300000);
+          giftNFTContract.once(giftNFTFilter, (eventNftId: unknown) => {
             clearTimeout(timeout);
+            let idValue = eventNftId;
+            if (Array.isArray(eventNftId)) {
+              idValue = eventNftId[0];
+            }
+            if (idValue && typeof idValue === 'object') {
+              if ('toString' in idValue && typeof idValue.toString === 'function') {
+                setClaimedNftId(idValue.toString());
+              } else if ('_hex' in idValue) {
+                setClaimedNftId(String((idValue as any)._hex));
+              } else {
+                setClaimedNftId(JSON.stringify(idValue));
+              }
+            } else {
+              setClaimedNftId(String(idValue));
+            }
             resolve();
           });
         });
         setModalMessage('Content hash updated!');
+      } else {
+        // If no content hash, set the claimed NFT ID from nftId
+        let idValue = nftId;
+        if (Array.isArray(nftId)) {
+          idValue = nftId[0];
+        }
+        if (idValue && typeof idValue === 'object') {
+          if ('toString' in idValue && typeof idValue.toString === 'function') {
+            setClaimedNftId(idValue.toString());
+          } else if ('_hex' in idValue) {
+            setClaimedNftId(String((idValue as any)._hex));
+          } else {
+            setClaimedNftId(JSON.stringify(idValue));
+          }
+        } else {
+          setClaimedNftId(String(idValue));
+        }
       }
       setModalStep('done');
       setModalMessage('Gift successfully redeemed!');
-      setTimeout(() => setModalOpen(false), 3000);
     } catch (error) {
-      setModalError(error instanceof Error ? error.message : 'Redemption failed');
-      setModalStep('done');
+      setWaitingForWallet(false);
+      setShowConfetti(false);
+      if (error instanceof Error && error.message && error.message.toLowerCase().includes('user denied')) {
+        setModalError('Transaction canceled');
+      } else {
+        setModalError(error instanceof Error ? error.message : 'Redemption failed');
+      }
+      setModalStep('error');
     }
   }
 
@@ -340,7 +462,7 @@ export default function ReceivedGifts() {
                       disabled={modalOpen}
                       className="w-full py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      Redeem Gift
+                      Claim Gift
                     </button>
                   )}
                 </div>
@@ -353,7 +475,7 @@ export default function ReceivedGifts() {
       {/* Modal for redeeming progress */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative flex flex-col items-center">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
               onClick={() => setModalOpen(false)}
@@ -361,18 +483,81 @@ export default function ReceivedGifts() {
               ×
             </button>
             <h2 className="text-lg font-bold mb-4">Redeeming Gift</h2>
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`w-3 h-3 rounded-full ${modalStep === 'redeeming' ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
-                <span>Claiming Gift and creating NFT</span>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`w-3 h-3 rounded-full ${modalStep === 'decrypting' ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
-                <span>Decrypting Content</span>
-              </div>
-            </div>
-            <div className="mb-2 text-gray-700">{modalMessage}</div>
-            {modalError && <div className="text-red-600 font-semibold">{modalError}</div>}
+            {/* Waiting for wallet confirmation */}
+            {waitingForWallet ? (
+              <div className="mb-4 w-full text-center text-gray-700">Waiting for wallet confirmation...</div>
+            ) : modalStep === 'error' ? (
+              <>
+                <div className="mb-4 w-full text-center text-red-600 font-semibold">{modalError}</div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    onClick={() => lastRedeemArgs && handleRedeem(lastRedeemArgs.giftId, lastRedeemArgs.contentHash)}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                    onClick={() => setModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4 w-full">
+                  <div className="flex items-center gap-2 mb-2">
+                    {modalStep === 'redeeming' && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span>Claiming gift and creating NFT</span>
+                      </div>
+                    )}
+                    {modalStep === 'decrypting' && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span>Decrypting content</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Progress Bar */}
+                  <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-2">
+                    <div
+                      className={`h-3 rounded-full transition-all duration-300 ${modalStep === 'done' ? 'bg-green-500' : 'bg-blue-500'}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+                {modalStep === 'redeeming' && (
+                  <div className="mt-4 text-center text-gray-700">Waiting for NFT creation...</div>
+                )}
+                {modalStep === 'decrypting' && (
+                  <div className="mt-4 text-center text-gray-700">This can take up to 5 minutes.</div>
+                )}
+                {modalStep === 'done' && (
+                  <>
+                    <img
+                      src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeDF1N3V0c3l3NXJhYmN4MHpseGc4cHdtdGEwcnpocXMzbG55c2s1cyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/hVVJisUlKBgQYc6PQh/giphy.gif"
+                      alt="Gift animation"
+                      className="my-4 mx-auto rounded-lg shadow"
+                      style={{ width: '200px', height: '200px', objectFit: 'cover' }}
+                    />
+                    <div className="mb-2 text-gray-700 text-center font-semibold">
+                      NFT with ID: {claimedNftId} has been claimed
+                    </div>
+                    <div className="flex justify-center mt-4">
+                      <button
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                        onClick={() => setModalOpen(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
