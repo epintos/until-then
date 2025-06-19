@@ -16,7 +16,7 @@ import { Giveaway } from "src/Giveaway.sol";
 import { RedeemAirdropAutomation } from "src/avalanche-airdrop/RedeemAirdropAutomation.sol";
 
 contract CreateGift is Script {
-    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreigvskrhncpnphgk4gfrt2owwgurejcaoik4nhexje2dqu3bzlzfge";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
@@ -24,14 +24,14 @@ contract CreateGift is Script {
 
         vm.startBroadcast(account);
         UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
-            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, false, 0
+            account, block.timestamp - 1 minutes, GIFT_PRIVATE_CONTENT_HASH, false, 0
         );
         vm.stopBroadcast();
     }
 }
 
 contract CreateEmptyGift is Script {
-    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreigvskrhncpnphgk4gfrt2owwgurejcaoik4nhexje2dqu3bzlzfge";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
@@ -46,7 +46,7 @@ contract CreateEmptyGift is Script {
 }
 
 contract CreateGiftWithETHYield is Script {
-    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreigvskrhncpnphgk4gfrt2owwgurejcaoik4nhexje2dqu3bzlzfge";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
@@ -54,14 +54,14 @@ contract CreateGiftWithETHYield is Script {
 
         vm.startBroadcast(account);
         UntilThenV1(untilThenV1Address).createGift{ value: 0.02 ether }(
-            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0
+            account, block.timestamp - 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 0
         );
         vm.stopBroadcast();
     }
 }
 
 contract CreateGiftWithLinkYield is Script {
-    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreif4hee4u53zgr2ilqmk4csmtuh4btxmal2fdihxhnhyolp4biwbji";
+    string private constant GIFT_PRIVATE_CONTENT_HASH = "bafkreigvskrhncpnphgk4gfrt2owwgurejcaoik4nhexje2dqu3bzlzfge";
 
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
@@ -73,7 +73,7 @@ contract CreateGiftWithLinkYield is Script {
         IERC20(aaveYieldConfig.linkAddress).approve(aaveYieldConfig.yieldManagerAddress, 1 ether);
 
         UntilThenV1(untilThenV1Address).createGift{ value: 0.015 ether }(
-            account, block.timestamp + 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 1 ether
+            account, block.timestamp - 1 minutes, GIFT_PRIVATE_CONTENT_HASH, true, 1 ether
         );
         vm.stopBroadcast();
     }
