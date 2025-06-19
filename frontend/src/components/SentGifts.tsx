@@ -154,12 +154,12 @@ export default function SentGifts() {
             return (
               <div
                 key={gift.id.toString()}
-                className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Gift ID and Status */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-gray-900 mb-1 text-base">
                       Gift #{gift.id.toString()}
                     </h3>
                     <span
@@ -175,7 +175,7 @@ export default function SentGifts() {
                 {/* Content Hash */}
                 <div className="flex items-center gap-2 mb-3">
                   <Hash className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600 font-mono">
+                  <span className="text-xs text-gray-600 font-mono">
                     {gift.contentHash ? (
                       status === "Pending" ? (
                         <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
@@ -198,7 +198,7 @@ export default function SentGifts() {
                 {/* NFT Claimed ID */}
                 <div className="flex items-center gap-2 mb-3">
                   <Tag className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600 font-mono">
+                  <span className="text-xs text-gray-600 font-mono">
                     {status === "Pending" ? "Not claimed yet" : gift.nftClaimedId.toString()}
                   </span>
                 </div>
@@ -206,7 +206,7 @@ export default function SentGifts() {
                 {/* Timestamp */}
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-gray-600">
                     {formatDate(gift.releaseTimestamp)}
                   </span>
                 </div>
@@ -214,7 +214,7 @@ export default function SentGifts() {
                 {/* Amount */}
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900 font-medium">
+                  <span className="text-xs text-gray-900 font-medium">
                     {formatAmount(gift.amount)}{" "}
                     {gift.isYield && gift.linkYield ? "LINK" : "ETH"}
                   </span>
@@ -223,7 +223,7 @@ export default function SentGifts() {
                 {/* Yield Information */}
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-gray-600">
                     {gift.isYield ? (
                       <span className="text-green-600 font-medium">
                         {gift.linkYield ? "LINK" : "ETH"} Yield
@@ -237,7 +237,7 @@ export default function SentGifts() {
                 {/* Recipient */}
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-xs text-gray-500 mb-1">Recipient:</p>
-                  <p className="text-sm font-mono text-gray-700">
+                  <p className="text-xs font-mono text-gray-700">
                     {formatAddress(gift.receiver)}
                   </p>
                 </div>

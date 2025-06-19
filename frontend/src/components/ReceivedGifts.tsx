@@ -299,7 +299,7 @@ export default function ReceivedGifts() {
             return (
               <div
                 key={gift.id.toString()}
-                className={`bg-white border-2 rounded-lg p-6 shadow-sm transition-all ${
+                className={`bg-white border-2 rounded-lg p-4 shadow-sm transition-all ${
                   canRedeem 
                     ? "border-green-200 hover:shadow-lg hover:border-green-300" 
                     : "border-gray-200 hover:shadow-md"
@@ -308,7 +308,7 @@ export default function ReceivedGifts() {
                 {/* Gift ID and Status */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-base text-gray-900 mb-1">
                       Gift #{gift.id.toString()}
                     </h3>
                     {canRedeem ? (
@@ -329,7 +329,7 @@ export default function ReceivedGifts() {
                 {/* Content Hash */}
                 <div className="flex items-center gap-2 mb-3">
                   <Hash className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600 font-mono">
+                  <span className="text-xs text-gray-600 font-mono">
                     {gift.contentHash ? (
                       status === "Pending" ? (
                         <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
@@ -352,7 +352,7 @@ export default function ReceivedGifts() {
                 {/* Timestamp */}
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-gray-600">
                     {formatDate(gift.releaseTimestamp)}
                   </span>
                 </div>
@@ -361,7 +361,7 @@ export default function ReceivedGifts() {
                 {timeUntil && (
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm text-yellow-600 font-medium">
+                    <span className="text-xs text-yellow-600 font-medium">
                       {timeUntil} remaining
                     </span>
                   </div>
@@ -370,7 +370,7 @@ export default function ReceivedGifts() {
                 {/* Amount */}
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900 font-medium">
+                  <span className="text-xs text-gray-900 font-medium">
                     {formatAmount(gift.amount)}{" "}
                     {gift.isYield && gift.linkYield ? "LINK" : "ETH"}
                   </span>
@@ -379,7 +379,7 @@ export default function ReceivedGifts() {
                 {/* Yield Information */}
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-gray-600">
                     {gift.isYield ? (
                       <span className="text-green-600 font-medium">
                         {gift.linkYield ? "LINK" : "ETH"} Yield

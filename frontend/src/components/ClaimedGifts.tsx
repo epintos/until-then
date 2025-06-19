@@ -1,7 +1,7 @@
 "use client";
 
 import { chainsToContracts, giftNFTAbi, untilThenV1Abi } from "@/constants";
-import { Hash, Loader, Lock } from "lucide-react";
+import { Download, Hash, Loader, Lock } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Abi, formatEther, formatUnits } from "viem";
@@ -187,6 +187,15 @@ export default function ClaimedGifts() {
       return decrypted;
     } catch (err: unknown) {
       setDecrypting(false);
+      if (
+        typeof err === 'object' && err !== null && 'message' in err &&
+          typeof (err as { message?: unknown }).message === 'string' &&
+          (err as { message: string }).message.includes('User denied message decryption')
+      ) {
+        // Only log to console, do not alert
+        console.error(err);
+        return null;
+      }
       if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
         alert((err as { message: string }).message || "Failed to decrypt content");
       } else {
@@ -263,41 +272,39 @@ export default function ClaimedGifts() {
                 className={`bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all group border-gray-200 ${highlightLast && isLast ? 'ring-4 ring-blue-400 border-blue-400' : ''}`}
               >
                 {/* NFT Image */}
-                <div className="relative aspect-square">
+                <div className="relative w-full h-[120px]">
                   {imageUrl ? (
                     <Image
                       src={imageUrl}
                       alt={`Gift NFT ${nft.gift.id}`}
                       className="w-full h-full object-cover"
-                      width={400}
-                      height={400}
+                      width={160}
+                      height={120}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                      No Image
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">No Image</div>
                   )}
                 </div>
 
                 {/* NFT Details */}
-                <div className="p-4">
+                <div className="p-3">
                   <div className="mb-3">
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-gray-900 mb-1 text-base">
                       Gift ID: #{nft.gift.id.toString()}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-xs text-gray-600 mb-1">
                       NFT ID: #{nft.id.toString()}
                     </p>
                     <p className="text-xs text-gray-500 mb-1">Claimed on:</p>
-                    <p className="text-sm text-gray-700 mb-2">
+                    <p className="text-xs text-gray-700 mb-2">
                       {formatDate(nft.gift.claimedTimestamp || nft.gift.releaseTimestamp)}
                     </p>
                     <p className="text-xs text-gray-500 mb-1">Amount Sent:</p>
-                    <p className="text-sm text-gray-700 mb-1">
+                    <p className="text-xs text-gray-700 mb-1">
                       {nft.gift.linkYield ? formatUnits(nft.gift.amount, 18) : formatEther(nft.gift.amount)} {nft.gift.linkYield ? 'LINK' : 'ETH'}
                     </p>
                     <p className="text-xs text-gray-500 mb-1">Amount Claimed:</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-xs text-gray-700">
                       {nft.gift.linkYield ? formatUnits(nft.gift.amountClaimed || BigInt(0), 18) : formatEther(nft.gift.amountClaimed || BigInt(0))} {nft.gift.linkYield ? 'LINK' : 'ETH'}
                     </p>
                   </div>
@@ -306,7 +313,7 @@ export default function ClaimedGifts() {
                   {nft.gift.contentHash && (
                     <div className="flex items-center gap-2 mb-3">
                       <Hash className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600 font-mono">
+                      <span className="text-xs text-gray-600 font-mono">
                         {nft.metadata?.contentHash ? (
                           nft.gift.status === 1 ? (
                             <Lock className="inline-block w-4 h-4 mr-1 text-gray-500" />
@@ -333,16 +340,16 @@ export default function ClaimedGifts() {
                       <button
                         onClick={() => handleShowContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
-                        className="w-1/2 py-2 px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                        className="w-1/2 py-1 px-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
                       >
                         Show content
                       </button>
                       <button
                         onClick={() => handleDownloadContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
-                        className="w-1/2 py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                        className="w-1/2 py-1 px-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
                       >
-                        Download content
+                        <Download className="w-4 h-4" aria-label="Download content" />
                       </button>
                     </div>
                   )}
