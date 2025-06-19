@@ -279,12 +279,15 @@ export default function CreateGift() {
         </div>
         {/* Receiver Public Key */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
             Receiver Metamask Public Key
+            <span className="relative group">
+              <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                The provided key will be used to encrypt the content, ensuring that only the intended receiver can read it.
+              </span>
+            </span>
           </label>
-          <p className="text-xs text-gray-500 mb-2">
-            This will be used to encrypt the content, so the receiver only can read it.
-          </p>
           <input
             type="text"
             value={formData.receiverPublicKey}
@@ -314,8 +317,14 @@ export default function CreateGift() {
 
         {/* File Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
             Upload Content (Optional)
+            <span className="relative group">
+              <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                The encrypted content will be uploaded to Pinata's private IPFS, allowing the receiver to access it only after the specified release date.
+              </span>
+            </span>
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input
@@ -343,8 +352,14 @@ export default function CreateGift() {
 
         {/* Yield Options */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-1">
             Yield Option
+            <span className="relative group">
+              <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                You can choose to deposit the gift amount into a yield strategy. This allows the receiver to potentially receive a larger amount in the future, depending on the current APY of the selected currency on Aave. Note that this option involves additional risk.
+              </span>
+            </span>
           </label>
           <div className="space-y-3">
             {[
@@ -362,7 +377,17 @@ export default function CreateGift() {
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">{option.label}</div>
+                  <div className="font-medium text-gray-900 flex items-center gap-1">
+                    {option.label}
+                    {option.value === 'link' && (
+                      <span className="relative group">
+                        <Info className="w-4 h-4 text-blue-500 inline-block align-middle cursor-pointer" />
+                        <span className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-96 bg-gray-800 text-white text-xs rounded px-3 py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                          On Sepolia (for testing), you'll need LINK tokens compatible with Aave. You can obtain them from: https://app.aave.com/faucet/
+                        </span>
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-600">{option.desc}</div>
                 </div>
               </label>
