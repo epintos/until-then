@@ -41,7 +41,7 @@ You can find the smart contract calling the Chainlink Function [here](./smart-co
 
 During this flow, a `GiftClaimed` event is triggered.
 
-<img src="./images/claim-gift.png" alt="Logo" width="600" />
+<img src="./images/claim-gift.png" alt="Logo" width="800" />
 
 <img src="./images/decrypt.png" alt="Logo" width="400" />
 
@@ -91,6 +91,33 @@ The UI was implemented using React, Next.js, and Tailwind CSS, and deployed on V
 
 The smart contracts were developed in Solidity and deployed to Sepolia.
 
+## Codebase
+
+- [chainlink-fuction](./chainlink-function/): Includes codebase related to the Chainlink Function
+- [frontend](./frontend/): Includes the web app
+- [smart-contracts](./smart-contracts/): Includes the smart contracts implementation
+
+## Contracts addresses
+
+### Sepolia
+
+| Contract Name                | Address                                      |
+|------------------------------|----------------------------------------------|
+| `UntilThenV1.sol`            | `0xefA2408BDc98e783440A1B27d72827cec8A399d8` |
+| `GiftNFT.sol`                | `0x2F901523DE07a64A05Eb65028Fb7BBcB991681f4` |
+| `AaveYieldManager.sol`       | `0x9bC2359CF283BF2B91b96aD9491d9A8Fc1f13123` |
+| `Giveaway.sol`               | `0x01927971547Ec6771e1fc0A9CAdCfA85F9aCCf03` |
+| `RedeemAirdropAutomation.sol`| `0x30DCDaFD1B0B2C702FE67d1bF0f61821970BB7aA` |
+
+### Avalanche Fuji
+
+| Contract Name                | Address                                      |
+|------------------------------|----------------------------------------------|
+| `Receiver.sol`               | `0xC17778DaC70f33d58a6D594bC1aD7f58a4F5Fa4B` |
+| `UntilThenER20.sol`          | `0x3164d84A42ec935f620d73a2e22C8b3E2Cb049aE` |
+
+You can find other addresses used in [here](./smart-contracts/script/HelperConfig.s.sol)
+
 ## Demo
 
 You can find a working demo on Sepolia [here]().
@@ -99,3 +126,7 @@ For ETH, you can get test tokens [here](https://cloud.google.com/application/web
 For LINK, you can get tokens [here](https://app.aave.com/faucet/). Note: The tokens used are AAVE LINK tokens that support yield on Sepolia.
 
 For letter encryption, the app supports MetaMask.
+
+## Useful commands
+
+Each project folder includes its own set of commands. Check the `README.md` or `package.json` in each folder for details.
