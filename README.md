@@ -2,7 +2,6 @@
 
 <img src="./frontend/public/logo.png" alt="Logo" width="100" />
 
-
 This project was developed during the 2025 Chromion Chainlink Hackathon.
 
 ## Inspiration
@@ -29,11 +28,7 @@ Until Then offers the following features:
 In this initial phase, the letter is encrypted using the receiver's MetaMask public encryption key. The UI offers an easy way to generate this key so the receiver can share it with the sender.  
 After claiming, the receiver can decrypt the letter using MetaMask.
 
-### Claiming
-
-The gift is claimed as an NFT that includes the Gift ID and the CID of the IPFS file. The amount is automatically transferred to the receiver's address.
-
-During this flow, a `GiftClaimed` event is triggered.
+<img src="./images/create-gift.png" alt="Logo" width="400" />
 
 ### Locking the letter content
 
@@ -44,11 +39,19 @@ During the claiming process, a Chainlink Function triggered by the `UntilThenV1`
 You can find the Chainlink Function files [here](./chainlink-function/src/source.js). That folder also includes some utility files used during development.  
 You can find the smart contract calling the Chainlink Function [here](./smart-contracts/src/IPFSFunctionsConsumer.sol).
 
+During this flow, a `GiftClaimed` event is triggered.
+
+<img src="./images/claim-gift.png" alt="Logo" width="600" />
+
+<img src="./images/decrypt.png" alt="Logo" width="400" />
+
 ### Airdrop
 
 A log-based Upkeep listens to the `GiftClaimed` event. When triggered, using Chainlink CCIP, a message is sent to a `Receiver` on Avalanche. The message includes the `mint` signature of the UNTIL ERC20 contract on Avalanche. Once the message is received, 500 tokens are minted to the receiver's wallet.
 
 You can find the smart contracts related to the log automation and CCIP [here](./smart-contracts/src/avalanche-airdrop/).
+
+<img src="./images/airdrop.png" alt="Logo" width="800" />
 
 ### Giveaway
 
@@ -57,6 +60,10 @@ Another log-based Upkeep listens to the `GiftClaimed` event. When triggered, the
 A time-based Upkeep runs weekly and chooses a winner using Chainlink VRF for randomness. Then it uses a price feed to transfer the equivalent of $100 in ETH to the winner.
 
 You can find the smart contract related to the log and time-based automation [here](./smart-contracts/src/Giveaway.sol).
+
+<img src="./images/giveaway-1.png" alt="Logo" width="600" />
+
+<img src="./images/weekly-giveaway.png" alt="Logo" width="600" />
 
 ### Yield
 
