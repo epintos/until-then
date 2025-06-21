@@ -51,6 +51,8 @@ A log-based Upkeep listens to the `GiftClaimed` event. When triggered, using Cha
 
 You can find the smart contracts related to the log automation and CCIP [here](./smart-contracts/src/avalanche-airdrop/).
 
+CCIP Transaction example: [0x19b8ce134e75d517a248a037be27bcff8a8e624be104170b53de801cb7dae348](https://ccip.chain.link/#/side-drawer/msg/0x19b8ce134e75d517a248a037be27bcff8a8e624be104170b53de801cb7dae348)
+
 <img src="./images/airdrop.png" alt="Logo" width="800" />
 
 ### Giveaway
@@ -120,7 +122,7 @@ You can find other addresses used in [here](./smart-contracts/script/HelperConfi
 
 ## Demo
 
-You can find a working demo on Sepolia [here]().
+You can find a working demo on Sepolia [here](https://until-then.vercel.app/).
 
 For ETH, you can get test tokens [here](https://cloud.google.com/application/web3/faucet/ethereum/sepolia).  
 For LINK, you can get tokens [here](https://app.aave.com/faucet/). Note: The tokens used are AAVE LINK tokens that support yield on Sepolia.
