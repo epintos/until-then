@@ -7,7 +7,10 @@
     font-family: system-ui, sans-serif;
   }
   body {
-    background-color: #fcf7f3;
+    background-color: #f2ede7;
+  }
+  header {
+    background-color: #fcf7f3 !important;
   }
 }
 

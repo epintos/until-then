@@ -75,7 +75,7 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
   };
 
   return (
-    <div className="w-64 bg-white rounded-lg shadow-sm border p-6">
+    <div className="w-64 bg-[#FCF7F3] rounded-lg shadow-sm p-6">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Dashboard</h2>
       <nav className="space-y-2 mb-8">
         {tabs.map((tab) => {
