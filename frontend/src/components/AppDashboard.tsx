@@ -15,7 +15,7 @@ const tabs = [
   { id: "claimed", name: "Claimed Gifts", icon: Crown, href: "/dashboard/claimed-gifts" },
 ];
 
-export default function AppDashboard() {
+export default function AppDashboard({ isConnected }: { isConnected?: boolean }) {
   const { address } = useAccount();
   const chainId = useChainId();
   const [publicKey, setPublicKey] = useState<string>("");
@@ -84,7 +84,9 @@ export default function AppDashboard() {
             <Link
               key={tab.id}
               href={tab.href}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900${!isConnected ? ' pointer-events-none opacity-50' : ''}`}
+              tabIndex={!isConnected ? -1 : 0}
+              aria-disabled={!isConnected}
             >
               <Icon className="w-5 h-5" />
               <span className="font-medium">{tab.name}</span>

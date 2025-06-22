@@ -1,10 +1,13 @@
+'use client';
 import AppDashboard from "@/components/AppDashboard";
 import React from "react";
+import { useAccount } from "wagmi";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { isConnected } = useAccount();
   return (
     <div className="flex gap-8 max-w-7xl mx-auto px-6 py-8">
-      <AppDashboard />
+      <AppDashboard isConnected={isConnected} />
       <div className="flex-1 bg-white rounded-lg shadow-sm border p-8">
         {children}
       </div>

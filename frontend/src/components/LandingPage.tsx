@@ -157,17 +157,6 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         <p className="text-xl mb-8 opacity-90">
           {displayText}
         </p>
-        <button
-          onClick={onStart}
-          disabled={!isConnected}
-          className={`px-8 py-4 text-lg font-semibold rounded-lg transition-all ${
-            isConnected
-              ? "bg-white text-blue-600 hover:bg-gray-100 transform hover:scale-105"
-              : "bg-gray-400 text-gray-200 cursor-not-allowed"
-          }`}
-        >
-          {isConnected ? "Start Creating Gifts" : "Connect Wallet First"}
-        </button>
       </div>
     </div>
   );
