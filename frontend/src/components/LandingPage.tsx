@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Calendar } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -23,31 +23,31 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
       {/* Hero Section */}
       <div className="text-center mb-16">
         <div className="mb-6">
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Send gifts through time with a decentralized solution. Schedule meaningful presents to be delivered at just the right moment in the future.
+          <p className="text-5xl font-bold text-black max-w-2xl mx-auto leading-snug">
+            Send gifts through time with a decentralized solution.
           </p>
         </div>
       </div>
 
       {/* Features Grid */}
       <div className="grid md:grid-cols-4 gap-8 mb-16">
-        <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
-          <Clock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+        <div className="card text-center p-6 rounded-lg shadow-sm">
+          <Calendar className="w-12 h-12 text-black mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Time-Locked Gifts</h3>
           <p className="text-gray-600">
             Schedule gifts to be claimed at specific dates and times in the future.
           </p>
         </div>
         
-        <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
+        <div className="card text-center p-6 rounded-lg shadow-sm">
           <Image src="/chainlink.png" alt="Chainlink" width={48} height={48} className="w-12 h-12 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Secure & Decentralized</h3>
+          <h3 className="text-xl font-semibold mb-2">Trustless by design</h3>
           <p className="text-gray-600">
             Built on Ethereum using Chainlink for ultimate security and transparency.
           </p>
         </div>
         
-        <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
+        <div className="card text-center p-6 rounded-lg shadow-sm">
           <Image src="/pinata.svg" alt="Pinata IPFS" width={48} height={48} className="w-8 h-12 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Locked</h3>
           <p className="text-gray-600">
@@ -55,7 +55,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
           </p>
         </div>
         
-        <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
+        <div className="card text-center p-6 rounded-lg shadow-sm">
           <Image src="/aave.png" alt="Aave" width={48} height={48} className="w-12 h-12 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Yield Options</h3>
           <p className="text-gray-600">

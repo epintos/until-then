@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const Header = () => {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-50 flex justify-between items-center py-4 px-6 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 flex justify-between items-center py-4 px-6 shadow-sm">
       <div className="flex items-center gap-4">
         <Link href="/">
           <span className="text-2xl font-bold text-gray-900">Until Then</span>

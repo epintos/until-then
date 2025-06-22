@@ -6,6 +6,9 @@
   html {
     font-family: system-ui, sans-serif;
   }
+  body {
+    background-color: #fcf7f3;
+  }
 }
 
 @layer components {
@@ -20,6 +23,11 @@
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .card {
+    background-color: #fcf7f3 !important;
+    border: none !important;
   }
 }
 
