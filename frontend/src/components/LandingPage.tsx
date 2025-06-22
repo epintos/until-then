@@ -19,13 +19,10 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
   }, [isConnected]); // Update when isConnected changes
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-6xl mx-auto px-6 py-12">
       {/* Hero Section */}
       <div className="text-center mb-16">
         <div className="mb-6">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Until Then
-          </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Send gifts through time with a decentralized solution. Schedule meaningful presents to be delivered at just the right moment in the future.
           </p>
@@ -43,7 +40,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         </div>
         
         <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
-          <Image src="/chainlink.png" alt="Chainlink" width={48} height={48} className="mx-auto mb-4" />
+          <Image src="/chainlink.png" alt="Chainlink" width={48} height={48} className="w-12 h-12 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Secure & Decentralized</h3>
           <p className="text-gray-600">
             Built on Ethereum using Chainlink for ultimate security and transparency.
@@ -51,7 +48,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         </div>
         
         <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
-          <Image src="/pinata.svg" alt="Pinata IPFS" width={48} height={48} className="mx-auto mb-4" />
+          <Image src="/pinata.svg" alt="Pinata IPFS" width={48} height={48} className="w-8 h-12 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Locked</h3>
           <p className="text-gray-600">
             Content is locked using Pinata Private IPFS.
@@ -59,7 +56,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         </div>
         
         <div className="text-center p-6 bg-white rounded-lg shadow-sm border">
-          <Image src="/aave.png" alt="Aave" width={48} height={48} className="mx-auto mb-4" />
+          <Image src="/aave.png" alt="Aave" width={48} height={48} className="w-12 h-12 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Yield Options</h3>
           <p className="text-gray-600">
             Choose from ETH or LINK yield generation while gifts are locked.
@@ -70,7 +67,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
       {/* How It Works */}
       <div className="mb-16">
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          How It Works
+          How it works
         </h2>
         <div className="grid md:grid-cols-5 gap-6">
           <div className="text-center">
