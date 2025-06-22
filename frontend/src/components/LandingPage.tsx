@@ -150,14 +150,6 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
           </div>
         </div>
       </div>
-
-      {/* CTA Section */}
-      <div className="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-        <h2 className="text-3xl font-bold mb-4">Ready to Send Your First Gift?</h2>
-        <p className="text-xl mb-8 opacity-90">
-          {displayText}
-        </p>
-      </div>
     </div>
   );
 }
