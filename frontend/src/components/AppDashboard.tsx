@@ -100,15 +100,15 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-500" /> Prizes
         </h3>
-        <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-yellow-100 to-yellow-200 flex flex-col items-center">
-          <div className="text-xs text-gray-600 mb-1">UNTIL Avalanche Airdrop</div>
-          <div className="text-3xl font-extrabold text-yellow-700 tracking-tight mb-1">
+        <div className="mb-6 p-4 rounded-lg flex flex-col items-center" style={{ backgroundColor: '#C7FE93', color: '#2B2B2B' }}>
+          <div className="text-xs mb-1">UNTIL Avalanche Airdrop</div>
+          <div className="text-3xl font-extrabold tracking-tight mb-1">
             {typeof airdropAmount === 'bigint' ? formatUnits(airdropAmount, 18) : '--'} <span className="text-lg font-bold">UNTIL</span>
           </div>
         </div>
-        <div className="mb-6 p-4 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center">
-          <div className="text-xs text-gray-600 mb-1">Weekly Giveaway Gains</div>
-          <div className="text-3xl font-extrabold text-blue-700 tracking-tight mb-1">
+        <div className="mb-6 p-4 rounded-lg flex flex-col items-center" style={{ backgroundColor: '#83BD4E', color: '#2B2B2B' }}>
+          <div className="text-xs mb-1">Weekly Giveaway Gains</div>
+          <div className="text-3xl font-extrabold tracking-tight mb-1">
             {typeof giveawayWins === 'bigint' ? Number(formatUnits(giveawayWins, 18)).toFixed(4) : '--'} <span className="text-lg font-bold">ETH</span>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
                     setError("Could not copy to clipboard. Please make sure the window is focused and try again.");
                   }
                 }}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
+                className="px-3 py-2 btn-primary text-xs font-semibold"
               >
                 {copied ? "Copied!" : "Copy"}
               </button>
