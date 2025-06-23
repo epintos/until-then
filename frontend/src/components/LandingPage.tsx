@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react";
+import { Calendar, Gift } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -23,8 +23,8 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
       {/* Hero Section */}
       <div className="text-center mb-16">
         <div className="mb-6">
-          <p className="text-5xl font-bold text-black max-w-2xl mx-auto leading-snug">
-            Send gifts through time with a decentralized solution.
+          <p className="text-5xl md:text-5xl font-extrabold text-black max-w-3xl mx-auto leading-tight">
+            Send gifts through time with a<br />decentralized solution.
           </p>
         </div>
       </div>
@@ -71,25 +71,25 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
         </h2>
         <div className="grid md:grid-cols-5 gap-6">
           <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+            <div className="w-12 h-12 bg-[#24584D] text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
               1
             </div>
             <h4 className="font-semibold mb-2">Create</h4>
             <p className="text-sm text-gray-600">
-              Set up your gift with recipient, date, content and $
+              Set your gift with a recipient, date, message, and amount.
             </p>
           </div>
           <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+            <div className="w-12 h-12 bg-[#24584D] text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
               2
             </div>
             <h4 className="font-semibold mb-2">Lock</h4>
             <p className="text-sm text-gray-600">
-              Gift is locked using Pinata private IPFS until release date
+              Gift is locked using Pinata private IPFS until release date.
             </p>
           </div>
           <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+            <div className="w-12 h-12 bg-[#24584D] text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
               3
             </div>
             <h4 className="font-semibold mb-2">Grow</h4>
@@ -98,7 +98,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
             </p>
           </div>
           <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+            <div className="w-12 h-12 bg-[#24584D] text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
               4
             </div>
             <h4 className="font-semibold mb-2">Claim</h4>
@@ -107,7 +107,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
             </p>
           </div>
           <div className="text-center">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">5</div>
+            <div className="w-12 h-12 bg-[#24584D] text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">5</div>
             <h4 className="font-semibold mb-2">Decrypt</h4>
             <p className="text-sm text-gray-600">Recipient decrypts the letter content using Metamask</p>
           </div>
@@ -116,39 +116,43 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
 
       {/* Promotions Section */}
       <div className="mb-16">
-        <div className="grid md:grid-cols-2 gap-6 justify-center items-center">
-          <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl p-8 text-white flex flex-col justify-between h-full">
-            <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center mb-0 min-h-[48px]">
-                <span className="flex items-center justify-center h-12 w-12 mr-3">
-                  <Image src="/avalanche.png" alt="Avalanche" width={40} height={40} className="h-10 w-10 object-contain" />
-                </span>
-                <h3 className="text-xl font-bold whitespace-nowrap">Early Claimer Bonus</h3>
+        <div className="grid md:grid-cols-2 gap-8 justify-center items-center">
+          {/* Early Claimer Bonus */}
+          <div className="bg-[#FCF7F3] rounded-2xl p-8 flex gap-6 shadow-sm items-center">
+            <span className="flex items-center justify-center w-16 h-16">
+              <Image src="/avalanche.png" alt="Avalanche" width={48} height={48} className="w-12 h-12 object-contain" />
+            </span>
+            <div className="flex-1">
+              <div className="text-xl font-bold text-[#2B2B2B] mb-1 leading-tight">Early Claimer Bonus</div>
+              <div className="text-lg text-[#2B2B2B] font-normal leading-snug">
+                First 100 claims get a 500 UNTIL<br />airdrop on <span className="font-bold">Avalanche!</span>
               </div>
-              <p className="text-lg mb-0 font-semibold flex items-center gap-2 min-h-[56px] max-w-[28ch]">
-                🪙 First 100 claims get a 500 UNTIL airdrop on Avalanche!
-              </p>
             </div>
-            <p className="opacity-90 min-h-[48px]">
-              Be among the first to experience time-locked gifts and earn exclusive rewards.
-            </p>
           </div>
-          
-          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-8 text-white flex flex-col justify-between h-full">
-            <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center mb-0 min-h-[48px]">
-                <span className="flex items-center justify-center h-12 w-12 mr-3 text-4xl">🎁</span>
-                <h3 className="text-xl font-bold whitespace-nowrap">Weekly Avalanche Rewards</h3>
+          {/* Weekly Avalanche Rewards */}
+          <div className="bg-[#FCF7F3] rounded-2xl p-8 flex gap-6 shadow-sm items-center">
+            <span className="flex items-center justify-center w-16 h-16">
+              <Gift className="w-12 h-12 text-[#2B2B2B]" strokeWidth={2} />
+            </span>
+            <div className="flex-1">
+              <div className="text-xl font-bold text-[#2B2B2B] mb-1 leading-tight">Weekly Avalanche Rewards</div>
+              <div className="text-lg text-[#2B2B2B] font-normal leading-snug">
+                Participate in weekly giveaways<br />worth <span className="font-bold">$100 in ETH!</span>
               </div>
-              <p className="text-lg mb-0 font-semibold flex items-center gap-2 min-h-[56px] max-w-[28ch]">
-                🎉 $100 weekly giveaway
-              </p>
             </div>
-            <p className="opacity-90 min-h-[48px]">
-              Every gift claimer can participate in weekly giveaways worth $100 in ETH!
-            </p>
           </div>
         </div>
+      </div>
+
+      {/* Call to Action Section */}
+      <div className="w-screen left-0 right-0 py-20 bg-[#2B2B2B] flex flex-col items-center justify-center" style={{ position: 'relative', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+        <h2 className="text-4xl md:text-5xl font-extrabold text-white text-center mb-8">Ready to Send Your First Gift?</h2>
+        <button
+          onClick={onStart}
+          className="btn-primary px-10 py-4 text-lg font-bold"
+        >
+          Launch App
+        </button>
       </div>
     </div>
   );
