@@ -5,7 +5,7 @@ import { chainsToContracts, giveawayAbi, redeemAirdropAutomationAbi } from "@/co
 import { Crown, Gift, Inbox, Send, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useChainId, useReadContract } from "wagmi";
 
@@ -17,6 +17,10 @@ const tabs = [
 ];
 
 export default function AppDashboard() {
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   const { address, status } = useAccount();
   const chainId = useChainId();
   const pathname = usePathname();
@@ -63,6 +67,8 @@ export default function AppDashboard() {
       setGenerating(false);
     }
   };
+
+  if (!hasMounted) return null;
 
   return (
     <div className="w-64 rounded-lg shadow-sm border p-6" style={{ backgroundColor: '#FCF7F3' }}>

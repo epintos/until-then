@@ -40,7 +40,7 @@ interface ClaimedNFT {
 }
 
 export default function ClaimedGifts() {
-  const { address } = useAccount();
+  const { address, status } = useAccount();
   const chainId = useChainId();
   const untilThenAddress =
     (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
@@ -241,12 +241,42 @@ export default function ClaimedGifts() {
     });
   };
 
+  // Always render the title and description
+  const header = (
+    <div className="mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Claimed Gifts</h1>
+      <p className="text-gray-600">Your collection of redeemed gift NFTs</p>
+    </div>
+  );
+
+  // Show empty state if claimedGiftIds is an empty array
+  if (claimedGiftIds && claimedGiftIds.length === 0) {
+    return (
+      <div>
+        {header}
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Image src="/file.svg" alt="No NFTs" className="w-8 h-8 text-gray-400" width={32} height={32} />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No claimed gifts yet</h3>
+          <p className="text-gray-600">Redeem your received gifts to see them as NFTs here</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state: show spinner only if status is connecting and address is present
+  if (status === "connecting" && address) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Loader className="animate-spin w-10 h-10 text-gray-400" />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Claimed Gifts</h1>
-        <p className="text-gray-600">Your collection of redeemed gift NFTs</p>
-      </div>
+      {header}
 
       {claimedNFTs === undefined ? (
         <div className="flex justify-center items-center py-16">

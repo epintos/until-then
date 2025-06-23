@@ -19,7 +19,7 @@ interface Gift {
 }
 
 export default function SentGifts() {
-  const { address } = useAccount();
+  const { address, status } = useAccount();
   const chainId = useChainId();
   const untilThenAddress =
     (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
@@ -123,14 +123,48 @@ export default function SentGifts() {
     return Number(amount) / 10 ** 18; // Assuming 18 decimals
   };
 
+  // Loading state: show spinner only if status is connecting and address is present
+  if (status === "connecting" && address) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Loader className="animate-spin w-10 h-10 text-gray-400" />
+      </div>
+    );
+  }
+
+  // Always render the title and description
+  const header = (
+    <div className="mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Sent Gifts</h1>
+      <p className="text-gray-600">
+        Track the gifts you have sent and their status
+      </p>
+    </div>
+  );
+
+  // Show empty state if giftIds is an empty array
+  if (giftIds && giftIds.length === 0) {
+    return (
+      <div>
+        {header}
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No gifts sent yet
+          </h3>
+          <p className="text-gray-600">
+            Create your first gift to see it appear here
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sent Gifts</h1>
-        <p className="text-gray-600">
-          Track the gifts you have sent and their status
-        </p>
-      </div>
+      {header}
       {gifts === undefined ? (
         <div className="flex justify-center items-center py-16">
           <Loader className="animate-spin w-10 h-10 text-gray-400" />

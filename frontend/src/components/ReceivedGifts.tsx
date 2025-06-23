@@ -22,7 +22,7 @@ interface Gift {
 }
 
 export default function ReceivedGifts() {
-  const { address } = useAccount();
+  const { address, status } = useAccount();
   const chainId = useChainId();
   const untilThenAddress =
     (chainsToContracts[chainId]?.untilThenV1 as `0x${string}`) || "0x";
@@ -261,15 +261,46 @@ export default function ReceivedGifts() {
     }
   }
 
+  // Loading state: show spinner only if status is connecting and address is present
+  if (status === "connecting" && address) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Loader className="animate-spin w-10 h-10 text-gray-400" />
+      </div>
+    );
+  }
+
+  // Always render the title and description
+  const header = (
+    <div className="mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Received Gifts</h1>
+      <p className="text-gray-600">
+        Gifts sent to you that are waiting to be redeemed
+      </p>
+    </div>
+  );
+
+  // Show empty state if giftIds is an empty array
+  if (giftIds && giftIds.length === 0) {
+    return (
+      <div>
+        {header}
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No gifts received yet</h3>
+          <p className="text-gray-600">
+            Gifts sent to your address will appear here
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Received Gifts</h1>
-        <p className="text-gray-600">
-          Gifts sent to you that are waiting to be redeemed
-        </p>
-      </div>
-
+      {header}
       {gifts === undefined ? (
         <div className="flex justify-center items-center py-16">
           <Loader className="animate-spin w-10 h-10 text-gray-400" />
