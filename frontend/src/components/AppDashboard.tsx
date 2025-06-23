@@ -16,8 +16,8 @@ const tabs = [
   { id: "claimed", name: "Claimed Gifts", icon: Crown, href: "/dashboard/claimed-gifts" },
 ];
 
-export default function AppDashboard({ isConnected }: { isConnected?: boolean }) {
-  const { address } = useAccount();
+export default function AppDashboard() {
+  const { address, status } = useAccount();
   const chainId = useChainId();
   const pathname = usePathname();
   const [publicKey, setPublicKey] = useState<string>("");
@@ -69,13 +69,14 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
       <nav className="space-y-2 mb-8">
         {tabs.map((tab) => {
           const Icon = tab.icon;
+          const disabled = status === "disconnected";
           return (
             <Link
               key={tab.id}
               href={tab.href}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600${!isConnected ? ' pointer-events-none opacity-50' : ''}`}
-              tabIndex={!isConnected ? -1 : 0}
-              aria-disabled={!isConnected}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600${disabled ? ' pointer-events-none opacity-50' : ''}`}
+              tabIndex={disabled ? -1 : 0}
+              aria-disabled={disabled}
             >
               <Icon className="w-5 h-5" />
               <span className={pathname === tab.href ? "font-bold" : undefined}>{tab.name}</span>

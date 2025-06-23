@@ -14,5 +14,5 @@ export default getDefaultConfig({
       wallets: [metaMaskWallet],
     },
   ],
-  ssr: true,
+  ssr: false,
 });

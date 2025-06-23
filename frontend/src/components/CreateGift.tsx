@@ -195,7 +195,7 @@ export default function CreateGift() {
       setProgress(0);
       let p = 0;
       interval = setInterval(() => {
-        p += 100 / 1800; // 120 seconds
+        p += 100 / 1200; // 120 seconds
         setProgress(Math.min(p, 100));
         if (p >= 100) clearInterval(interval);
       }, 100);

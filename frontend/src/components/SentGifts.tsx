@@ -196,7 +196,7 @@ export default function SentGifts() {
                         </a>
                       )
                     ) : (
-                      "No content"
+                      "No letter"
                     )}
                   </span>
                 </div>

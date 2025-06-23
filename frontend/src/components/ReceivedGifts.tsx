@@ -339,7 +339,7 @@ export default function ReceivedGifts() {
                         </a>
                       )
                     ) : (
-                      "No content"
+                      "No letter"
                     )}
                   </span>
                 </div>

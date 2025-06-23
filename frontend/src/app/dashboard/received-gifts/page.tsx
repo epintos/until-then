@@ -5,12 +5,15 @@ import { useEffect } from "react";
 import { useAccount } from "wagmi";
 
 export default function ReceivedGiftsPage() {
-  const { isConnected } = useAccount();
+  const { status } = useAccount();
   const router = useRouter();
   useEffect(() => {
-    if (!isConnected) {
+    if (status === "disconnected") {
       router.replace("/dashboard");
     }
-  }, [isConnected, router]);
-  return isConnected ? <ReceivedGifts /> : null;
+  }, [status, router]);
+  if (status === "connecting" || status === "reconnecting") {
+    return null; // or a spinner
+  }
+  return status === "connected" ? <ReceivedGifts /> : null;
 } 
