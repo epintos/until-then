@@ -4,6 +4,7 @@
 import { chainsToContracts, giveawayAbi, redeemAirdropAutomationAbi } from "@/constants";
 import { Crown, Gift, Inbox, Send, Trophy } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useChainId, useReadContract } from "wagmi";
@@ -18,6 +19,7 @@ const tabs = [
 export default function AppDashboard({ isConnected }: { isConnected?: boolean }) {
   const { address } = useAccount();
   const chainId = useChainId();
+  const pathname = usePathname();
   const [publicKey, setPublicKey] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -56,26 +58,14 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
       setPublicKey(publicKey);
       setCopied(false);
     } catch (err: unknown) {
-      if (
-        typeof err === 'object' && err !== null &&
-        (
-          ('code' in err && err && typeof (err as { code?: unknown }).code === 'string' && (err as { code: string }).code === 'ACTION_REJECTED') ||
-          ('message' in err && err && typeof (err as { message?: unknown }).message === 'string' && ((err as { message: string }).message.toLowerCase().includes('user rejected')))
-        )
-      ) {
-        setError("Signature request was cancelled. Your public key was not generated.");
-      } else if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
-        setError((err as { message: string }).message || "Failed to generate public key");
-      } else {
-        setError("Failed to generate public key");
-      }
+      console.error(err);
     } finally {
       setGenerating(false);
     }
   };
 
   return (
-    <div className="w-64 bg-white rounded-lg shadow-sm border p-6">
+    <div className="w-64 rounded-lg shadow-sm border p-6" style={{ backgroundColor: '#FCF7F3' }}>
       <h2 className="text-xl font-bold text-gray-900 mb-6">Dashboard</h2>
       <nav className="space-y-2 mb-8">
         {tabs.map((tab) => {
@@ -84,12 +74,12 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
             <Link
               key={tab.id}
               href={tab.href}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900${!isConnected ? ' pointer-events-none opacity-50' : ''}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600${!isConnected ? ' pointer-events-none opacity-50' : ''}`}
               tabIndex={!isConnected ? -1 : 0}
               aria-disabled={!isConnected}
             >
               <Icon className="w-5 h-5" />
-              <span className="font-medium">{tab.name}</span>
+              <span className={pathname === tab.href ? "font-bold" : undefined}>{tab.name}</span>
             </Link>
           );
         })}
@@ -154,7 +144,6 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
             {generating ? "Generating..." : "Generate & Copy Public Key"}
           </button>
         )}
-        {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
       </div>
     </div>
   );
