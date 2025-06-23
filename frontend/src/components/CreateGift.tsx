@@ -1,6 +1,7 @@
 "use client";
 
 import { encrypt } from '@metamask/eth-sig-util';
+import { BrowserProvider, Contract } from "ethers";
 import { Calendar, Info, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Address, formatEther, parseEther } from "viem";
@@ -28,6 +29,12 @@ export default function CreateGift() {
   const [isGiftTx, setIsGiftTx] = useState(false);
   const { isSuccess, isError, error: txError } = useWaitForTransactionReceipt({ hash: txHash });
   const [approveLinkState, setApproveLinkState] = useState<'idle' | 'approving' | 'approved' | 'error'>('idle');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState<'encrypting' | 'uploading' | 'creating' | 'done' | 'error' | 'wallet' | null>(null);
+  const [modalError, setModalError] = useState<string>("");
+  const [progress, setProgress] = useState(0);
+  const [lastSubmitArgs, setLastSubmitArgs] = useState<any>(null);
+  const [giftId, setGiftId] = useState<string | null>(null);
 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId });
@@ -146,28 +153,87 @@ export default function CreateGift() {
     setApproveLinkState('idle');
   }, [formData.amount, connectedAddress]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Helper to reset form
+  const resetForm = () => {
+    setFormData({
+      receiverAddress: "",
+      receiverPublicKey: "",
+      releaseDate: "",
+      amount: "",
+      yieldOption: formData.yieldOption, // keep yield option
+    });
+    setUploadedFile(null);
+    setButtonState('idle');
+    setTxHash(undefined);
+  };
+
+  // Modal progress effect
+  useEffect(() => {
+    if (!modalOpen) {
+      setProgress(0);
+      return;
+    }
+    let interval: NodeJS.Timeout | undefined;
+    if (modalStep === 'encrypting') {
+      setProgress(0);
+      let p = 0;
+      interval = setInterval(() => {
+        p += 100 / 30;
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 100);
+    } else if (modalStep === 'uploading') {
+      setProgress(0);
+      let p = 0;
+      interval = setInterval(() => {
+        p += 100 / 30;
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 100);
+    } else if (modalStep === 'creating') {
+      setProgress(0);
+      let p = 0;
+      interval = setInterval(() => {
+        p += 100 / 1800; // 120 seconds
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 100);
+    } else if (modalStep === 'done') {
+      setProgress(100);
+    } else if (modalStep === 'wallet') {
+      setProgress(0);
+      let p = 0;
+      interval = setInterval(() => {
+        p += 100 / 30;
+        setProgress(Math.min(p, 100));
+        if (p >= 100) clearInterval(interval);
+      }, 100);
+    }
+    return () => interval && clearInterval(interval);
+  }, [modalOpen, modalStep]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLastSubmitArgs({}); // No args, but allows retry
+    setModalOpen(true);
+    setModalStep('encrypting');
+    setModalError("");
     setIsCreating(true);
-
+    setGiftId(null);
     let currentContentHash: string | undefined = undefined;
-
-    if (uploadedFile) {
-      setIsEncrypting(true);
-      try {
+    try {
+      if (uploadedFile) {
+        setModalStep('encrypting');
         const receiverPublicKey = formData.receiverPublicKey;
         if (!receiverPublicKey) throw new Error("Receiver public key is required for encryption.");
-
         const fileText = await uploadedFile.text();
-        // Encrypt using MetaMask's public encryption key
         const encrypted = encrypt({
           publicKey: receiverPublicKey,
           data: fileText,
           version: 'x25519-xsalsa20-poly1305',
         });
         const encryptedString = Buffer.from(JSON.stringify(encrypted), 'utf8').toString('hex');
-        setIsEncrypting(false);
-        setIsUploading(true);
+        setModalStep('uploading');
         const response = await fetch("/api/upload-private", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -178,27 +244,15 @@ export default function CreateGift() {
         }
         const data = await response.json();
         currentContentHash = data.cid;
-        setIsUploading(false);
-      } catch (encryptError) {
-        console.error("Encryption or upload failed:", encryptError);
-        alert("Failed to encrypt or upload content.");
-        setIsEncrypting(false);
-        setIsUploading(false);
-        setIsCreating(false);
       }
-    }
-
-    // Calculate release timestamp
-    const [year, month, day] = formData.releaseDate.split('-').map(Number);
-    const releaseTimestamp: number = Math.floor(new Date(year, month - 1, day, 0, 0).getTime() / 1000);
-    const amountInWei = parseEther(formData.amount);
-
-    try {
+      setModalStep('wallet');
+      // Calculate release timestamp
+      const [year, month, day] = formData.releaseDate.split('-').map(Number);
+      const releaseTimestamp: number = Math.floor(new Date(year, month - 1, day, 0, 0).getTime() / 1000);
+      const amountInWei = parseEther(formData.amount);
       const receiverAddressAsAddress = formData.receiverAddress.startsWith("0x") 
         ? formData.receiverAddress as Address 
         : `0x${formData.receiverAddress}` as Address;
-
-      // Contract call args: (address, uint256 releaseTimestamp, string contentHash, bool isLink, uint256 amount)
       const args = [
         receiverAddressAsAddress,
         releaseTimestamp,
@@ -206,8 +260,8 @@ export default function CreateGift() {
         formData.yieldOption !== "none",
         formData.yieldOption === "link" ? amountInWei: 0,
       ];
-      setButtonState('creating');
-      setTxHash(undefined); // Reset txHash before new tx
+      setTxHash(undefined);
+      // Wait for wallet confirmation
       const tx = await writeContractAsync({
         abi: untilThenV1Abi,
         address: chainsToContracts[chainId].untilThenV1 as Address,
@@ -215,12 +269,43 @@ export default function CreateGift() {
         args,
         value: formData.yieldOption === "link" ? parseEther(fees.total.toString()) : amountInWei,
       });
+      setModalStep('creating');
       setTxHash(tx);
+      // Wait for GiftCreated event
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new Contract(chainsToContracts[chainId].untilThenV1, untilThenV1Abi, provider);
+      const filter = contract.filters.GiftCreated(connectedAddress, receiverAddressAsAddress);
+      const giftIdFromEvent = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timed out waiting for GiftCreated event')), 120000);
+        contract.once(filter, (eventPayload) => {
+          clearTimeout(timeout);
+          let giftId;
+          if (eventPayload && typeof eventPayload === 'object' && 'args' in eventPayload && Array.isArray(eventPayload.args)) {
+            giftId = eventPayload.args[2];
+          } else {
+            giftId = eventPayload[2];
+          }
+          let id;
+          if (typeof giftId === 'bigint') {
+            id = giftId.toString();
+          } else if (typeof giftId === 'string') {
+            id = giftId;
+          } else if (giftId && typeof giftId === 'object' && 'toString' in giftId && typeof giftId.toString === 'function') {
+            id = giftId.toString();
+          } else {
+            id = String(giftId);
+          }
+          setGiftId(id);
+          resolve(id);
+        });
+      });
+      setModalStep('done');
       setIsGiftTx(true);
-    } catch (error) {
-      setButtonState('error');
-      console.error("Error sending transaction:", error);
-      setTimeout(() => setButtonState('idle'), 5000);
+    } catch (error: any) {
+      setModalStep('error');
+      setModalError('Something went wrong. Please try again.');
+      console.error(error);
+      setIsCreating(false);
       setIsGiftTx(false);
     }
   };
@@ -486,7 +571,7 @@ export default function CreateGift() {
             type="button"
             onClick={handleApproveLink}
             disabled={isCreating || approveLinkState === 'approving' || approveLinkState === 'approved'}
-            className={`w-full py-3 px-4 btn-primary flex items-center justify-center gap-2
+            className={`w-full py-3 px-4 btn-secondary flex items-center justify-center gap-2
               ${approveLinkState === 'approved' ? 'bg-green-600 text-white' :
                 approveLinkState === 'approving' ? 'bg-yellow-500 text-white' :
                 ''}`}
@@ -528,6 +613,77 @@ export default function CreateGift() {
         </button>
 
       </form>
+
+      {/* Modal for create gift progress */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.85)' }}>
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative flex flex-col items-center">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-0 bg-transparent shadow-none border-none"
+              style={{ background: 'none' }}
+              onClick={() => { setModalOpen(false); if (modalStep === 'done') resetForm(); }}
+            >
+              ×
+            </button>
+            <h2 className="text-lg font-bold mb-4">Create Gift</h2>
+            {modalStep === 'error' ? (
+              <>
+                <div className="mb-4 w-full text-center text-red-600 font-semibold">Something went wrong. Please try again.</div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    className="px-4 py-2 btn-primary rounded"
+                    onClick={() => { setModalOpen(false); setTimeout(() => handleSubmit(), 100); }}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    className="px-4 py-2 btn-secondary rounded"
+                    onClick={() => setModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : modalStep === 'done' ? (
+              <>
+                <div className="mb-4 w-full text-center text-green-600 font-semibold">Gift created successfully!{giftId && (<><br/>Gift ID: <span className="font-bold">{giftId}</span></>)}</div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    className="px-4 py-2 btn-primary rounded"
+                    onClick={() => { setModalOpen(false); resetForm(); }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4 w-full">
+                  <div className="flex items-center gap-2 mb-2">
+                    {modalStep === 'encrypting' && (
+                      <><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span><span>Encrypting Content...</span></> )}
+                    {modalStep === 'uploading' && (
+                      <><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span><span>Uploading Encrypted Content...</span></> )}
+                    {modalStep === 'wallet' && (
+                      <><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span><span>Waiting for wallet confirmation...</span></> )}
+                    {modalStep === 'creating' && (
+                      <><span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span><span>Creating Gift...</span></> )}
+                  </div>
+                  {/* Progress Bar */}
+                  {(modalStep !== 'wallet') && (
+                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-2">
+                      <div
+                        className="h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%`, backgroundColor: '#816EE2' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
