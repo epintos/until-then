@@ -307,11 +307,11 @@ export default function ReceivedGifts() {
                       Gift #{gift.id.toString()}
                     </h3>
                     {canRedeem ? (
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#E9E5FD', color: '#24584D' }}>
                         Ready to Redeem
                       </span>
                     ) : (
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#816EE2', color: '#fff' }}>
                         Time Locked
                       </span>
                     )}

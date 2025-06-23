@@ -292,6 +292,9 @@ export default function ClaimedGifts() {
                     <h3 className="font-semibold text-gray-900 mb-1 text-base">
                       Gift ID: #{nft.gift.id.toString()}
                   </h3>
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#C7FE93', color: '#24584D' }}>
+                      Claimed
+                    </span>
                     <p className="text-xs text-gray-600 mb-1">
                       NFT ID: #{nft.id.toString()}
                     </p>

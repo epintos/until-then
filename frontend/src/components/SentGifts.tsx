@@ -162,13 +162,19 @@ export default function SentGifts() {
                     <h3 className="font-semibold text-gray-900 mb-1 text-base">
                       Gift #{gift.id.toString()}
                     </h3>
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                        status
-                      )}`}
-                    >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </span>
+                    {status === 'Claimed' ? (
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#C7FE93', color: '#24584D' }}>
+                        Claimed
+                      </span>
+                    ) : status === 'Pending' ? (
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#E9E5FD', color: '#24584D' }}>
+                        Pending
+                      </span>
+                    ) : status === 'Absent' ? (
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full" style={{ backgroundColor: '#816EE2', color: '#fff' }}>
+                        Time Locked
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
