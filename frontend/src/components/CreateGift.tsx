@@ -22,8 +22,6 @@ export default function CreateGift() {
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [isEncrypting, setIsEncrypting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [buttonState, setButtonState] = useState<'idle' | 'creating' | 'created' | 'error'>('idle');
   const [isGiftTx, setIsGiftTx] = useState(false);
@@ -31,9 +29,7 @@ export default function CreateGift() {
   const [approveLinkState, setApproveLinkState] = useState<'idle' | 'approving' | 'approved' | 'error'>('idle');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState<'encrypting' | 'uploading' | 'creating' | 'done' | 'error' | 'wallet' | null>(null);
-  const [modalError, setModalError] = useState<string>("");
   const [progress, setProgress] = useState(0);
-  const [lastSubmitArgs, setLastSubmitArgs] = useState<any>(null);
   const [giftId, setGiftId] = useState<string | null>(null);
 
   const { writeContractAsync } = useWriteContract();
@@ -215,10 +211,8 @@ export default function CreateGift() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setLastSubmitArgs({}); // No args, but allows retry
     setModalOpen(true);
     setModalStep('encrypting');
-    setModalError("");
     setIsCreating(true);
     setGiftId(null);
     let currentContentHash: string | undefined = undefined;
@@ -276,7 +270,7 @@ export default function CreateGift() {
       const provider = new BrowserProvider(window.ethereum);
       const contract = new Contract(chainsToContracts[chainId].untilThenV1, untilThenV1Abi, provider);
       const filter = contract.filters.GiftCreated(connectedAddress, receiverAddressAsAddress);
-      const giftIdFromEvent = await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timed out waiting for GiftCreated event')), 120000);
         contract.once(filter, (eventPayload) => {
           clearTimeout(timeout);
@@ -302,9 +296,8 @@ export default function CreateGift() {
       });
       setModalStep('done');
       setIsGiftTx(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       setModalStep('error');
-      setModalError('Something went wrong. Please try again.');
       console.error(error);
       setIsCreating(false);
       setIsGiftTx(false);
@@ -594,15 +587,15 @@ export default function CreateGift() {
 
         <button
           type="submit"
-          disabled={!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved) || buttonState === 'created'}
+          disabled={!isFormValid || buttonState === 'creating' || buttonState === 'created'}
           className={`w-full py-3 px-4 flex items-center justify-center gap-2 btn-primary
             ${buttonState === 'created' ? 'bg-green-600 text-white' :
               buttonState === 'error' ? 'bg-red-600 text-white' :
-              (!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved))
+              (!isFormValid || buttonState === 'creating')
                 ? 'bg-gray-300 text-gray-400 cursor-not-allowed' :
                 ''}`}
         >
-          {(buttonState === 'creating' || isEncrypting || isUploading) && (
+          {(buttonState === 'creating') && (
             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
@@ -611,8 +604,6 @@ export default function CreateGift() {
           {buttonState === 'created' ? "Gift Created" :
             buttonState === 'error' ? "Transaction Failed" :
             buttonState === 'creating' ? "Creating Gift..." :
-            isEncrypting ? "Encrypting Content..." : 
-            isUploading ? "Uploading Encrypted Content..." :
             "Create Gift"}
         </button>
 

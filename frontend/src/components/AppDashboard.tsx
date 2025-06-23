@@ -27,7 +27,6 @@ export default function AppDashboard() {
   const [publicKey, setPublicKey] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string>("");
 
   // Prizes: Until ERC20 Airdrop (on redeemAirdropAutomation), Weekly Giveaway (on giveaway)
   const redeemAirdropAddress = chainsToContracts[chainId]?.redeemAirdropAutomation as `0x${string}` | undefined;
@@ -51,7 +50,6 @@ export default function AppDashboard() {
 
   const handleGeneratePublicKey = async () => {
     setGenerating(true);
-    setError("");
     try {
       if (!window.ethereum || !address) throw new Error("Wallet not connected");
       // Use MetaMask's eth_getEncryptionPublicKey
@@ -131,7 +129,7 @@ export default function AppDashboard() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   } catch {
-                    setError("Could not copy to clipboard. Please make sure the window is focused and try again.");
+                    console.error("Could not copy to clipboard. Please make sure the window is focused and try again.");
                   }
                 }}
                 className="px-3 py-2 btn-primary text-xs font-semibold"

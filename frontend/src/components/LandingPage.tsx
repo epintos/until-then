@@ -1,23 +1,7 @@
 import { Calendar, Gift } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
-interface LandingPageProps {
-  onStart: () => void;
-  isConnected: boolean;
-}
-
-export default function LandingPage({ onStart, isConnected }: LandingPageProps) {
-  const [displayText, setDisplayText] = useState("Connect your wallet to begin sending gifts through time.");
-
-  useEffect(() => {
-    if (isConnected) {
-      setDisplayText("You're all set! Start creating time-locked gifts now.");
-    } else {
-      setDisplayText("Connect your wallet to begin sending gifts through time.");
-    }
-  }, [isConnected]); // Update when isConnected changes
-
+export default function LandingPage() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
       {/* Hero Section */}
