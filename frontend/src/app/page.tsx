@@ -3,5 +3,5 @@
 import LandingPage from "@/components/LandingPage";
 
 export default function Home() {
-  return <LandingPage isConnected={false} onStart={() => {}} />;
+  return <LandingPage />;
 }
