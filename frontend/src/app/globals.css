@@ -41,17 +41,21 @@
   .btn-primary {
     @apply bg-[#816EE2] text-white rounded-lg font-semibold transition-all;
   }
+  /* Remove hover color change for primary button */
   button:hover:not(:disabled),
   .btn-primary:hover:not(:disabled) {
-    @apply bg-[#6d5bc2];
+    @apply bg-[#816EE2];
   }
   /* Secondary button style */
   .btn-secondary {
-    @apply border border-[#816EE2] text-[#25584D] bg-transparent rounded-lg font-semibold transition-all;
+    @apply border text-[#25584D] bg-transparent rounded-lg font-semibold transition-all;
+    border-color: #24584d !important;
   }
+  /* Remove hover color change for secondary button */
   .btn-secondary:hover:not(:disabled),
   .btn-secondary:focus {
-    @apply bg-[#f3f0fd] border-[#6d5bc2];
+    @apply bg-transparent;
+    border-color: #24584d !important;
   }
   /* Ensure all buttons, including RainbowKit, have the same rounded edges */
   button,
@@ -74,7 +78,7 @@
   }
   .rainbowkit-button:hover,
   .rainbowkit-button:focus {
-    background: #6d5bc2 !important;
+    background: #816ee2 !important;
   }
 }
 

@@ -506,12 +506,12 @@ export default function CreateGift() {
         <button
           type="submit"
           disabled={!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved) || buttonState === 'created'}
-          className={`w-full py-3 px-4 flex items-center justify-center gap-2 font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75
+          className={`w-full py-3 px-4 flex items-center justify-center gap-2 btn-primary
             ${buttonState === 'created' ? 'bg-green-600 text-white' :
               buttonState === 'error' ? 'bg-red-600 text-white' :
               (!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved))
                 ? 'bg-gray-300 text-gray-400 cursor-not-allowed' :
-                'btn-primary'}`}
+                ''}`}
         >
           {(buttonState === 'creating' || isEncrypting || isUploading) && (
             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

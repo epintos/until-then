@@ -347,7 +347,7 @@ export default function ClaimedGifts() {
                   <button
                         onClick={() => handleDownloadContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
-                        className="w-1/2 py-1 px-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                        className="w-1/2 py-1 px-2 text-xs btn-secondary flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
                   >
                         <Download className="w-4 h-4" aria-label="Download content" />
                   </button>

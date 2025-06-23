@@ -149,7 +149,7 @@ export default function AppDashboard({ isConnected }: { isConnected?: boolean })
           <button
             onClick={handleGeneratePublicKey}
             disabled={generating || !address}
-            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
+            className="w-full px-3 py-2 btn-secondary text-xs font-semibold"
           >
             {generating ? "Generating..." : "Generate & Copy Public Key"}
           </button>

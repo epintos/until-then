@@ -399,7 +399,7 @@ export default function ReceivedGifts() {
                     <button
                       onClick={() => handleRedeem(gift.id, gift.contentHash)}
                       disabled={modalOpen}
-                      className="w-full py-2 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="w-full py-2 px-4 text-sm btn-primary"
                     >
                       Claim Gift
                     </button>
