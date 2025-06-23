@@ -1,11 +1,7 @@
 "use client";
 
-import HomeContent from "@/components/HomeContent";
+import LandingPage from "@/components/LandingPage";
 
 export default function Home() {
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F2EDE7' }}>
-      <HomeContent />
-    </div>
-  );
+  return <LandingPage isConnected={false} onStart={() => {}} />;
 }

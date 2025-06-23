@@ -148,7 +148,7 @@ export default function LandingPage({ onStart, isConnected }: LandingPageProps) 
       <div className="w-screen left-0 right-0 py-20 bg-[#2B2B2B] flex flex-col items-center justify-center" style={{ position: 'relative', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
         <h2 className="text-4xl md:text-5xl font-extrabold text-white text-center mb-8">Ready to Send Your First Gift?</h2>
         <button
-          onClick={onStart}
+          onClick={() => { window.location.href = '/dashboard'; }}
           className="btn-primary px-10 py-4 text-lg font-bold"
         >
           Launch App
