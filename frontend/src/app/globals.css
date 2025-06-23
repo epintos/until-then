@@ -80,6 +80,12 @@
   .rainbowkit-button:focus {
     background: #816ee2 !important;
   }
+  /* Remove button hover translateY effect */
+  button:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled) {
+    transform: none !important;
+  }
 }
 
 /* Custom scrollbar */
