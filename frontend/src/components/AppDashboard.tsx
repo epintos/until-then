@@ -66,14 +66,14 @@ export default function AppDashboard() {
     }
   };
 
-  if (!hasMounted) return null;
-
+  // --- Always render the sidebar structure ---
   return (
     <div className="w-64 rounded-lg shadow-sm border p-6" style={{ backgroundColor: '#FCF7F3' }}>
       <nav className="space-y-2 mb-8">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const disabled = status === "disconnected";
+          // Only disable links after mount if status is disconnected
+          const disabled = hasMounted ? status === "disconnected" : false;
           return (
             <Link
               key={tab.id}
@@ -89,7 +89,7 @@ export default function AppDashboard() {
         })}
       </nav>
 
-      {/* Prizes Panel */}
+      {/* Prizes Panel - only show wallet data after mount */}
       <div className="mt-8">
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-500" /> Prizes
@@ -97,13 +97,13 @@ export default function AppDashboard() {
         <div className="mb-6 p-4 rounded-lg flex flex-col items-center" style={{ backgroundColor: '#C7FE93', color: '#2B2B2B' }}>
           <div className="text-xs mb-1">UNTIL Avalanche Airdrop</div>
           <div className="text-3xl font-extrabold tracking-tight mb-1">
-            {typeof airdropAmount === 'bigint' ? formatUnits(airdropAmount, 18) : '--'} <span className="text-lg font-bold">UNTIL</span>
+            {hasMounted && typeof airdropAmount === 'bigint' ? formatUnits(airdropAmount, 18) : '--'} <span className="text-lg font-bold">UNTIL</span>
           </div>
         </div>
         <div className="mb-6 p-4 rounded-lg flex flex-col items-center" style={{ backgroundColor: '#83BD4E', color: '#2B2B2B' }}>
           <div className="text-xs mb-1">Weekly Giveaway Gains</div>
           <div className="text-3xl font-extrabold tracking-tight mb-1">
-            {typeof giveawayWins === 'bigint' ? Number(formatUnits(giveawayWins, 18)).toFixed(4) : '--'} <span className="text-lg font-bold">ETH</span>
+            {hasMounted && typeof giveawayWins === 'bigint' ? Number(formatUnits(giveawayWins, 18)).toFixed(4) : '--'} <span className="text-lg font-bold">ETH</span>
           </div>
         </div>
       </div>
@@ -113,7 +113,8 @@ export default function AppDashboard() {
         <div className="text-xs text-gray-600 mb-2">
           Share your Metamask public key with the sender so they can encrypt the gift content. Only you will be able to decrypt and read the message after claiming the gift.
         </div>
-        {publicKey ? (
+        {/* Only show public key UI after mount */}
+        {hasMounted && publicKey ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <input
@@ -139,7 +140,7 @@ export default function AppDashboard() {
             </div>
             <div className="text-xs text-green-600">{copied ? "Public key copied to clipboard!" : ""}</div>
           </div>
-        ) : (
+        ) : hasMounted ? (
           <button
             onClick={handleGeneratePublicKey}
             disabled={generating || !address}
@@ -147,6 +148,9 @@ export default function AppDashboard() {
           >
             {generating ? "Generating..." : "Generate & Copy Public Key"}
           </button>
+        ) : (
+          // Placeholder for layout stability
+          <div className="h-10" />
         )}
       </div>
     </div>
