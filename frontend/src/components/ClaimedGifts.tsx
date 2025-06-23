@@ -277,7 +277,7 @@ export default function ClaimedGifts() {
                     <Image
                       src={imageUrl}
                       alt={`Gift NFT ${nft.gift.id}`}
-                  className="w-full h-full object-cover"
+                      className="w-full h-full object-cover"
                       width={160}
                       height={120}
                     />
@@ -365,14 +365,15 @@ export default function ClaimedGifts() {
 
       {/* Modal for showing decrypted content */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
           <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
-                <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-0 bg-transparent shadow-none border-none"
+              style={{ background: 'none' }}
               onClick={() => setModalOpen(false)}
-                >
+            >
               ×
-                </button>
+            </button>
             <h2 className="text-lg font-bold mb-4">{modalTitle}</h2>
             <pre className="whitespace-pre-wrap break-words text-gray-800 bg-gray-50 rounded p-4 max-h-96 overflow-auto">{modalContent}</pre>
           </div>

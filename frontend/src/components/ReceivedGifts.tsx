@@ -413,10 +413,11 @@ export default function ReceivedGifts() {
 
       {/* Modal for redeeming progress */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative flex flex-col items-center">
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-0 bg-transparent shadow-none border-none"
+              style={{ background: 'none' }}
               onClick={() => setModalOpen(false)}
             >
               ×
@@ -436,7 +437,7 @@ export default function ReceivedGifts() {
                     Retry
                   </button>
                   <button
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 btn-secondary rounded"
                     onClick={() => setModalOpen(false)}
                   >
                     Close
@@ -449,13 +450,13 @@ export default function ReceivedGifts() {
                   <div className="flex items-center gap-2 mb-2">
                     {modalStep === 'redeeming' && (
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span>
                         <span>Claiming your gift in the shape of an NFT</span>
                       </div>
                     )}
                     {modalStep === 'decrypting' && (
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#816EE2' }}></span>
                         <span>Making encrypted content available</span>
                       </div>
                     )}
@@ -463,8 +464,8 @@ export default function ReceivedGifts() {
                   {/* Progress Bar */}
                   <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-2">
                     <div
-                      className={`h-3 rounded-full transition-all duration-300 ${modalStep === 'done' ? 'bg-green-500' : 'bg-blue-500'}`}
-                      style={{ width: `${progress}%` }}
+                      className="h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%`, backgroundColor: '#816EE2' }}
                     />
                   </div>
                 </div>
@@ -497,7 +498,7 @@ export default function ReceivedGifts() {
                     </div>
                     <div className="flex justify-center mt-4">
                       <button
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                        className="px-4 py-2 btn-primary rounded"
                         onClick={() => setModalOpen(false)}
                       >
                         Close
