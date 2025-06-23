@@ -125,7 +125,8 @@ export default function CreateGift() {
     if (!connectedAddress || !formData.amount) return;
     if (!publicClient) {
       setApproveLinkState('error');
-      alert('No public client available for transaction confirmation.');
+      // Only log error, do not show alert
+      console.error('No public client available for transaction confirmation.');
       return;
     }
     try {
@@ -143,8 +144,8 @@ export default function CreateGift() {
       refetchLinkAllowance();
     } catch (error) {
       setApproveLinkState('error');
+      // Only log error, do not show alert
       console.error("Error approving LINK:", error);
-      alert("Failed to approve LINK.");
     }
   };
 
@@ -571,20 +572,23 @@ export default function CreateGift() {
             type="button"
             onClick={handleApproveLink}
             disabled={isCreating || approveLinkState === 'approving' || approveLinkState === 'approved'}
-            className={`w-full py-3 px-4 btn-secondary flex items-center justify-center gap-2
-              ${approveLinkState === 'approved' ? 'bg-green-600 text-white' :
-                approveLinkState === 'approving' ? 'bg-yellow-500 text-white' :
-                ''}`}
+            className={
+              approveLinkState === 'approving'
+                ? 'w-full py-3 px-4 btn-third flex items-center justify-center gap-2'
+                : 'w-full py-3 px-4 btn-secondary flex items-center justify-center gap-2'
+            }
           >
             {approveLinkState === 'approving' && (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5" style={{ color: '#816EE2' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
               </svg>
             )}
-            {approveLinkState === 'approved' ? 'LINK approved' :
-              approveLinkState === 'approving' ? 'Approving LINK...' :
-              'Approve LINK'}
+            {approveLinkState === 'approved'
+              ? 'LINK approved'
+              : approveLinkState === 'approving'
+              ? 'Approving LINK...'
+              : 'Approve LINK'}
           </button>
         )}
 
@@ -616,7 +620,7 @@ export default function CreateGift() {
 
       {/* Modal for create gift progress */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.85)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.4)' }}>
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative flex flex-col items-center">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-0 bg-transparent shadow-none border-none"

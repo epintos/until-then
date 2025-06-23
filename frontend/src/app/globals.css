@@ -57,6 +57,10 @@
     @apply bg-transparent;
     border-color: #24584d !important;
   }
+  /* Third button style for approving LINK */
+  .btn-third {
+    @apply bg-transparent text-[#816EE2] border border-[#816EE2] rounded-lg font-semibold transition-all;
+  }
   /* Ensure all buttons, including RainbowKit, have the same rounded edges */
   button,
   .btn-primary,
