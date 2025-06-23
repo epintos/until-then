@@ -12,6 +12,10 @@
   header {
     background-color: #fcf7f3 !important;
   }
+  :root {
+    --color-black: #2b2b2b;
+    --color-white: #fdfbfb;
+  }
 }
 
 @layer components {
