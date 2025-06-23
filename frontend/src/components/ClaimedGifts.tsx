@@ -340,7 +340,7 @@ export default function ClaimedGifts() {
                   <button
                         onClick={() => handleShowContent(nft.metadata?.contentHash || "", nft.id)}
                         disabled={!nft.metadata?.contentHash || decrypting}
-                        className="w-1/2 py-1 px-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
+                        className="w-1/2 py-1 px-2 text-xs btn-primary flex items-center justify-center gap-1 disabled:bg-gray-300 disabled:text-gray-400"
                   >
                         Show content
                   </button>

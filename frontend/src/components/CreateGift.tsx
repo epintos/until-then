@@ -486,10 +486,10 @@ export default function CreateGift() {
             type="button"
             onClick={handleApproveLink}
             disabled={isCreating || approveLinkState === 'approving' || approveLinkState === 'approved'}
-            className={`w-full py-3 px-4 font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75 flex items-center justify-center gap-2
+            className={`w-full py-3 px-4 btn-primary flex items-center justify-center gap-2
               ${approveLinkState === 'approved' ? 'bg-green-600 text-white' :
                 approveLinkState === 'approving' ? 'bg-yellow-500 text-white' :
-                'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+                ''}`}
           >
             {approveLinkState === 'approving' && (
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -511,7 +511,7 @@ export default function CreateGift() {
               buttonState === 'error' ? 'bg-red-600 text-white' :
               (!isFormValid || buttonState === 'creating' || isUploading || isEncrypting || (formData.yieldOption === "link" && !isLinkApproved))
                 ? 'bg-gray-300 text-gray-400 cursor-not-allowed' :
-                'bg-blue-600 text-white hover:bg-blue-700'}`}
+                'btn-primary'}`}
         >
           {(buttonState === 'creating' || isEncrypting || isUploading) && (
             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

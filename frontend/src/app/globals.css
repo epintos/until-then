@@ -36,6 +36,46 @@
     background-color: #fcf7f3 !important;
     border: none !important;
   }
+
+  button,
+  .btn-primary {
+    @apply bg-[#816EE2] text-white rounded-lg font-semibold transition-all;
+  }
+  button:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-[#6d5bc2];
+  }
+  /* Secondary button style */
+  .btn-secondary {
+    @apply border border-[#816EE2] text-[#25584D] bg-transparent rounded-lg font-semibold transition-all;
+  }
+  .btn-secondary:hover:not(:disabled),
+  .btn-secondary:focus {
+    @apply bg-[#f3f0fd] border-[#6d5bc2];
+  }
+  /* Ensure all buttons, including RainbowKit, have the same rounded edges */
+  button,
+  .btn-primary,
+  .btn-secondary,
+  .rainbowkit-button {
+    border-radius: 0.5rem !important; /* rounded-lg */
+  }
+
+  .rainbowkit-button,
+  .rainbowkit-button:hover,
+  .rainbowkit-button:focus {
+    background: #816ee2 !important;
+    color: #fff !important;
+    border-radius: 0.5rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .rainbowkit-button:hover,
+  .rainbowkit-button:focus {
+    background: #6d5bc2 !important;
+  }
 }
 
 /* Custom scrollbar */

@@ -15,12 +15,68 @@ const Header = () => {
       {pathname === "/" ? (
         <button
           onClick={() => window.location.href = '/dashboard'}
-          className="px-6 py-2 text-lg font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+          className="px-6 py-2 text-lg btn-primary"
         >
           Launch App
         </button>
       ) : (
-        <ConnectButton showBalance={false} />
+        <ConnectButton.Custom>
+          {({
+            account,
+            chain,
+            openAccountModal,
+            openChainModal,
+            openConnectModal,
+            authenticationStatus,
+            mounted,
+          }) => {
+            const ready = mounted && authenticationStatus !== 'loading';
+            const connected =
+              ready &&
+              account &&
+              chain &&
+              (!authenticationStatus || authenticationStatus === 'authenticated');
+
+            return (
+              <div
+                {...(!ready && {
+                  'aria-hidden': true,
+                  style: {
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  },
+                })}
+              >
+                {!connected ? (
+                  <button
+                    onClick={openConnectModal}
+                    type="button"
+                    className="btn-primary px-6 py-2 text-lg"
+                  >
+                    Connect Wallet
+                  </button>
+                ) : chain.unsupported ? (
+                  <button
+                    onClick={openChainModal}
+                    type="button"
+                    className="btn-primary px-6 py-2 text-lg"
+                  >
+                    Wrong network
+                  </button>
+                ) : (
+                  <button
+                    onClick={openAccountModal}
+                    type="button"
+                    className="btn-primary px-6 py-2 text-lg"
+                  >
+                    {account.displayName}
+                  </button>
+                )}
+              </div>
+            );
+          }}
+        </ConnectButton.Custom>
       )}
     </header>
   );
