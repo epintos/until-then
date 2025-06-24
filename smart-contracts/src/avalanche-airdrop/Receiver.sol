@@ -50,10 +50,10 @@ contract Receiver is CCIPReceiver, Ownable {
         _;
     }
 
-    function mintTest(address token, address to, uint256 amount) external onlyOwner {
-        UntilThenERC20(token).mint(to, amount);
-    }
-
+    /**
+     * @notice Function called by Chainlink CCIP to mint the tokens
+     * @param any2EvmMessage CCIP Client configuration
+     */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override

@@ -1,66 +1,23 @@
-## Foundry
+This includes the Foundry setup and Smart Contracts for Until Then
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Setup
 
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+  make install
+  cp .env.example .env
 ```
 
-### Test
-
-```shell
-$ forge test
+## Test
+```bash
+  make test
 ```
 
-### Format
+This will run the tests using fork-url and Sepolia.
 
-```shell
-$ forge fmt
-```
+## Useful commands
 
-### Gas Snapshots
+You can find other useful commands for deployments, setup and debuggin in the [Makefile](./Makefile)
 
-```shell
-$ forge snapshot
-```
+## Addreses in Sepolia
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+In the [HelperConfig](./script/HelperConfig.s.sol) you can find all the contracts that have been already deployed to Sepolia. Some of the deploy scripts will use these to setup the contracts properly.

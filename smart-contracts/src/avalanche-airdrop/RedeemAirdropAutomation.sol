@@ -114,6 +114,12 @@ contract RedeemAirdropAutomation is ILogAutomation, Ownable {
         emit GasLimitUpdated(msg.sender, newGasLimit);
     }
 
+    /**
+     * @notice Function called by the Chainlink Upkeep
+     * @notice Will mint the airdrop in Avalanche using CCIP
+     * @notice only Forwarder and Owner can call this function
+     * @param performData data including the receiver address
+     */
     function performUpkeep(bytes calldata performData) external override onlyLogTriggerForwarder {
         s_redeemed += 1;
         address airdropReceiver = abi.decode(performData, (address));

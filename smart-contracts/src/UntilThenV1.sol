@@ -100,28 +100,17 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         linkTokenAddress = _linkTokenAddress;
     }
 
-    function updateYieldManager(address newYieldManager) external onlyOwner {
-        yieldManager = IYieldManager(newYieldManager);
-        emit YieldManagerUpdated(msg.sender, newYieldManager);
-    }
-
-    function updateIPFSFunctionsConsumer(address _ipfsFunctionsConsumer) external onlyOwner {
-        if (_ipfsFunctionsConsumer == address(0)) {
-            revert UntilThenV1__CannotBeZeroAddress();
-        }
-        ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
-    }
-
-    function updateYieldFeePercentage(uint256 newYieldFeePercentage) external onlyOwner {
-        if (newYieldFeePercentage > 100) {
-            revert UntilThenV1__InvalidYieldFee();
-        }
-        yieldFeePercentage = newYieldFeePercentage;
-        emit YieldFeePercentageUpdated(newYieldFeePercentage);
-    }
-
     // EXTERNAL FUNCTIONS
-    // @dev users must approve link token to AaveYieldManager before calling this function
+
+    /**
+     * @notice Creates a new gift
+     * @notice Sender must approve LINK token to AaveYieldManager if yield is true
+     * @param receiver Address that will be able to claim the gift
+     * @param releaseTimestamp When the gift can be claimed
+     * @param contentHash CID of the Private IPFS file including the content text
+     * @param yield True if the amount should be yield
+     * @param erc20Amount ERC20 amount to yield. Zero for ETH.
+     */
     function createGift(
         address receiver,
         uint256 releaseTimestamp,
@@ -178,6 +167,14 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         emit GiftCreated(msg.sender, receiver, giftId);
     }
 
+    /**
+     * @notice Claims a specific gift
+     * @dev It will unyield the AAVE tokens if the gift included any
+     * @dev It will trigger the Chainlink Function to make the IPFS file public
+     * @dev It will transfer the gift amount to the receiver
+     * @param giftId Gift to claim
+     * @return nftId NFT minted
+     */
     function claimGift(uint256 giftId) external nonReentrant returns (uint256 nftId) {
         Gift storage gift = gifts[giftId];
         if (gift.status == GiftStatus.ABSENT) {
@@ -234,20 +231,24 @@ contract UntilThenV1 is Ownable, ReentrancyGuard {
         return nftId;
     }
 
-    function sendConsumerRequest(
-        uint256 nftId,
-        address sender,
-        address receiver,
-        string calldata contentHash
-    )
-        external
-        onlyOwner
-    {
-        string[] memory args = new string[](3);
-        args[0] = string(contentHash);
-        args[1] = Strings.toHexString(uint160(sender), 20);
-        args[2] = Strings.toHexString(uint160(receiver), 20);
-        ipfsFunctionsConsumer.sendRequest(nftId, args);
+    function updateYieldManager(address newYieldManager) external onlyOwner {
+        yieldManager = IYieldManager(newYieldManager);
+        emit YieldManagerUpdated(msg.sender, newYieldManager);
+    }
+
+    function updateIPFSFunctionsConsumer(address _ipfsFunctionsConsumer) external onlyOwner {
+        if (_ipfsFunctionsConsumer == address(0)) {
+            revert UntilThenV1__CannotBeZeroAddress();
+        }
+        ipfsFunctionsConsumer = IPFSFunctionsConsumer(_ipfsFunctionsConsumer);
+    }
+
+    function updateYieldFeePercentage(uint256 newYieldFeePercentage) external onlyOwner {
+        if (newYieldFeePercentage > 100) {
+            revert UntilThenV1__InvalidYieldFee();
+        }
+        yieldFeePercentage = newYieldFeePercentage;
+        emit YieldFeePercentageUpdated(newYieldFeePercentage);
     }
 
     function withdrawBalance() external onlyOwner {

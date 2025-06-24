@@ -103,7 +103,6 @@ contract HelperConfig is Script {
     address internal constant CCIP_AVALANCHE_FUJI_ROUTER_ADDRESS = 0xF694E193200268f9a4868e4Aa017A0118C9a8177;
 
     // Giveaway
-
     address internal constant SEPOLIA_VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 internal constant SEPOLIA_GAS_LANE = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 internal constant VRF_CALLBACK_GAS_LIMIT = 500_000;
@@ -170,6 +169,7 @@ contract HelperConfig is Script {
         });
     }
 
+    // TODO: Complete to be able to run tests and debug some contracts in Anvil.
     function _getOrCreateAnvilETHConfig() internal returns (NetworkConfig memory) {
         if (activeNetworkConfig.chainlinkFunctionsConfig.router != address(0)) {
             return activeNetworkConfig;

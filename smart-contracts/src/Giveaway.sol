@@ -116,6 +116,10 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Function called by the Upkeep that will add the receiver to the giveaway array
+     * @param performData data including the receiver's address
+     */
     function performUpkeep(bytes calldata performData) external override onlyLogTriggerForwarder {
         address giftReceiver = abi.decode(performData, (address));
         s_receivers.push(giftReceiver);
@@ -123,6 +127,11 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit ReceiverAddedToGiveaway(giftReceiver);
     }
 
+    /**
+     * @notice Function called by the Time Upkeep that chooses a winner for the Giveaway
+     * @notice Function calls Chainlink VRF to choose a winner
+     * @notice This function can only be called by a Chainlink Forward and the owner
+     */
     function performGiveaway() external onlyTimeBasedForwarder {
         if (s_receivers.length == 0) {
             emit NoReceiversForGiveaway();
@@ -153,6 +162,11 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit WithdrawComplete(msg.sender, balance);
     }
 
+    /**
+     * @notice Function called by Chainlink after requesting random numbers
+     * @param requestId Original request id
+     * @param randomWords Random word used to choose a winner
+     */
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override nonReentrant {
         if (requestId != s_lastRequestId) {
             revert Giveaway__InvalidRequestId();
@@ -179,6 +193,10 @@ contract Giveaway is ILogAutomation, VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit GiveawayComplete(requestId, winner, winnerId, prize);
     }
 
+    /**
+     * @notice Converts the giveaway amount in USD to ETH
+     * @param usdAmountInWei Value in ETH
+     */
     function _usdToETH(uint256 usdAmountInWei) private view returns (uint256 ethAmount) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(i_priceFeed);
         (, int256 price,,,) = priceFeed.latestRoundData();

@@ -82,6 +82,11 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable, AccessControl, Reent
         emit EncryptedSecretsSet();
     }
 
+    /**
+     * @notice Sends request to Chainlink function
+     * @param nftId NFT including the content hash
+     * @param args args including private CID, sender and receiver address
+     */
     function sendRequest(
         uint256 nftId,
         string[] calldata args
@@ -103,6 +108,12 @@ contract IPFSFunctionsConsumer is FunctionsClient, Ownable, AccessControl, Reent
         return requestId;
     }
 
+    /**
+     * @notice Function called when the Chainlink Function completes
+     * @param requestId Original request id
+     * @param response Response including public CID
+     * @param err Error, if any
+     */
     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
         FunctionRequest storage request = requests[requestId];
         uint256 nftId = request.nftId;
