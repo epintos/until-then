@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     const jsonContent = JSON.stringify({ encryptedContent, sender, timestamp });
 
-    const file = new File([jsonContent], `${timestamp}-${sender}.json]`, {
+    const file = new File([jsonContent], `${timestamp}-${sender}.json`, {
       type: "application/json",
     });
 
@@ -24,14 +24,7 @@ export async function POST(request: Request) {
       metadata: {
         name: `${timestamp}-${sender}.json`
       }
-    });
-
-    await pinata.groups.private.addFiles({
-      groupId: process.env.PINATA_PRIVATE_GROUP_ID!,
-      files: [
-        result.id
-      ],
-    });
+    }).group(process.env.PINATA_PRIVATE_GROUP_ID!)
 
     return NextResponse.json({ cid: result.cid }, { status: 200 });
   } catch (error) {
