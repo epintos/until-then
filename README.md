@@ -1,7 +1,5 @@
 # Until Then 🎁
 
-<img src="./frontend/public/logo.png" alt="Logo" width="100" />
-
 This project was developed during the 2025 Chromion Chainlink Hackathon.
 
 ## Inspiration
